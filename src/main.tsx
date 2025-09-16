@@ -2,13 +2,10 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { routeTree } from './routeTree.static'
+import { routeTree } from './routeTree.gen'
 import './styles.css'
 
 const queryClient = new QueryClient()
-
-// Check if we have a pre-rendered route
-const initialRoute = (window as any).__INITIAL_ROUTE__ || window.location.pathname
 
 const router = createRouter({
   routeTree,
@@ -16,7 +13,6 @@ const router = createRouter({
     queryClient,
   },
   defaultPreload: 'intent',
-  basepath: initialRoute !== window.location.pathname ? initialRoute : undefined,
 })
 
 declare module '@tanstack/react-router' {

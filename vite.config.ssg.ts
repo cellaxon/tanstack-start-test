@@ -46,9 +46,6 @@ export default defineConfig({
       output: {
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
-            if (id.includes('@tanstack/react-table')) {
-              return 'table-vendor'
-            }
             if (id.includes('d3')) {
               return 'd3-vendor'
             }
