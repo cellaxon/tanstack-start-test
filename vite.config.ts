@@ -13,9 +13,16 @@ const config = defineConfig({
     tailwindcss(),
     tanstackStart({
       customViteReactPlugin: true,
+      ssr: false,
     }),
     viteReact(),
   ],
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    minify: 'esbuild',
+    chunkSizeWarningLimit: 600,
+  },
 })
 
 export default config

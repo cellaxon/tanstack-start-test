@@ -11,11 +11,49 @@ pnpm start
 
 # Building For Production
 
-To build this application for production:
+## Static Build (Client-Side Only)
+
+This project supports static site generation for deployment to static hosting services like Netlify, Vercel, GitHub Pages, etc.
+
+### Build Commands
+
+```bash
+# Standard build with TanStack Start SSR
+pnpm build
+
+# Static build (pure client-side, no SSR)
+pnpm build:static
+
+# Preview static build locally
+pnpm serve
+```
+
+### Static Build Output
+
+✅ **Static build features:**
+- Output directory: `dist/`
+- Contains static HTML, CSS, and JavaScript files
+- Optimized code splitting (react-vendor, tanstack-vendor, d3-vendor)
+- Ready for deployment to any static hosting service
+
+### Deployment
+
+After running `pnpm build:static`, you can deploy the contents of the `dist/` folder to:
+- **Netlify**: Drag and drop the dist folder
+- **Vercel**: Deploy with `vercel --prod`
+- **GitHub Pages**: Push dist contents to gh-pages branch
+- **AWS S3**: Upload dist contents to S3 bucket
+- **Any static hosting service**
+
+## Standard Build (With SSR)
+
+For server-side rendering with TanStack Start:
 
 ```bash
 pnpm build
 ```
+
+This creates SSR-ready output in `.output/` directory.
 
 ## Testing
 
