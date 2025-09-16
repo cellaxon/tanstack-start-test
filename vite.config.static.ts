@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import viteReact from '@vitejs/plugin-react'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
 import tailwindcss from '@tailwindcss/vite'
+import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [
@@ -11,13 +12,16 @@ export default defineConfig({
     tailwindcss(),
     viteReact(),
   ],
+  base: '/',
   build: {
     outDir: 'dist',
     sourcemap: false,
     minify: 'esbuild',
     chunkSizeWarningLimit: 600,
     rollupOptions: {
-      input: '/index.html',
+      input: {
+        main: resolve(__dirname, 'index.html'),
+      },
       output: {
         manualChunks: (id) => {
           if (id.includes('node_modules')) {

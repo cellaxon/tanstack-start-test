@@ -1,0 +1,65 @@
+{
+  "Comment": "CloudFront distribution for SPA",
+  "Origins": [{
+    "DomainName": "your-bucket-name.s3.amazonaws.com",
+    "Id": "S3-your-bucket-name",
+    "S3OriginConfig": {
+      "OriginAccessIdentity": ""
+    }
+  }],
+  "DefaultRootObject": "index.html",
+  "CustomErrorResponses": [
+    {
+      "ErrorCode": 404,
+      "ResponseCode": 200,
+      "ResponsePagePath": "/index.html",
+      "ErrorCachingMinTTL": 300
+    },
+    {
+      "ErrorCode": 403,
+      "ResponseCode": 200,
+      "ResponsePagePath": "/index.html",
+      "ErrorCachingMinTTL": 300
+    }
+  ],
+  "DefaultCacheBehavior": {
+    "TargetOriginId": "S3-your-bucket-name",
+    "ViewerProtocolPolicy": "redirect-to-https",
+    "AllowedMethods": ["GET", "HEAD", "OPTIONS"],
+    "CachedMethods": ["GET", "HEAD", "OPTIONS"],
+    "Compress": true,
+    "ForwardedValues": {
+      "QueryString": false,
+      "Cookies": {
+        "Forward": "none"
+      }
+    },
+    "TrustedSigners": {
+      "Enabled": false,
+      "Quantity": 0
+    }
+  },
+  "CacheBehaviors": [
+    {
+      "PathPattern": "/assets/*",
+      "TargetOriginId": "S3-your-bucket-name",
+      "ViewerProtocolPolicy": "redirect-to-https",
+      "AllowedMethods": ["GET", "HEAD"],
+      "CachedMethods": ["GET", "HEAD"],
+      "Compress": true,
+      "MinTTL": 31536000,
+      "DefaultTTL": 31536000,
+      "MaxTTL": 31536000,
+      "ForwardedValues": {
+        "QueryString": false,
+        "Cookies": {
+          "Forward": "none"
+        },
+        "Headers": {
+          "Quantity": 0
+        }
+      }
+    }
+  ],
+  "Enabled": true
+}
