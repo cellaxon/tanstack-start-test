@@ -17,9 +17,6 @@ function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Username:', username, 'Length:', username.length)
-    console.log('Password:', password, 'Length:', password.length)
-    console.log('Expected: abcd (4), 1234 (4)')
     if (username === 'abcd' && password === '1234') {
       const user = { id: '1', username }
       localStorage.setItem('user', JSON.stringify(user))

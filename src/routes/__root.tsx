@@ -1,15 +1,10 @@
 import {
-  HeadContent,
-  Scripts,
   createRootRouteWithContext,
   Outlet,
   useNavigate,
   useLocation,
 } from '@tanstack/react-router'
-import { useEffect } from 'react'
-
-import appCss from '../styles.css?url'
-
+import { useEffect, useRef } from 'react'
 import type { QueryClient } from '@tanstack/react-query'
 
 interface MyRouterContext {
@@ -17,28 +12,7 @@ interface MyRouterContext {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  head: () => ({
-    meta: [
-      {
-        charSet: 'utf-8',
-      },
-      {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
-      },
-      {
-        title: 'API Gateway Dashboard',
-      },
-    ],
-    links: [
-      {
-        rel: 'stylesheet',
-        href: appCss,
-      },
-    ],
-  }),
   component: RootComponent,
-  shellComponent: RootDocument,
   notFoundComponent: () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -57,32 +31,27 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 function RootComponent() {
   const navigate = useNavigate()
   const location = useLocation()
+  const hasCheckedAuth = useRef(false)
 
   useEffect(() => {
+    // Prevent infinite loops by checking only once per mount
+    if (hasCheckedAuth.current) return
+    hasCheckedAuth.current = true
+
     const user = localStorage.getItem('user')
     const isLoginPage = location.pathname === '/login'
     const isDashboardPage = location.pathname.startsWith('/dashboard')
+    const isHomePage = location.pathname === '/'
 
-    if (!user && !isLoginPage) {
-      navigate({ to: '/login' })
-    } else if (user && (location.pathname === '/' || isLoginPage)) {
-      navigate({ to: '/dashboard' })
+    // Only redirect if necessary
+    if (!user && !isLoginPage && (isDashboardPage || isHomePage)) {
+      navigate({ to: '/login', replace: true })
+    } else if (user && isLoginPage) {
+      navigate({ to: '/dashboard', replace: true })
+    } else if (user && isHomePage) {
+      navigate({ to: '/dashboard', replace: true })
     }
-  }, [location.pathname, navigate])
+  }, []) // Run only once on mount
 
   return <Outlet />
-}
-
-function RootDocument({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  )
 }
