@@ -11,10 +11,22 @@
 import { createServerRootRoute } from '@tanstack/react-start/server'
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo.tanstack-query'
 import { Route as DemoTableRouteImport } from './routes/demo.table'
 import { Route as DemoStoreRouteImport } from './routes/demo.store'
+import { Route as DashboardUsageRouteImport } from './routes/dashboard/usage'
+import { Route as DashboardTrafficRouteImport } from './routes/dashboard/traffic'
+import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
+import { Route as DashboardSecurityRouteImport } from './routes/dashboard/security'
+import { Route as DashboardRateLimitingRouteImport } from './routes/dashboard/rate-limiting'
+import { Route as DashboardPerformanceRouteImport } from './routes/dashboard/performance'
+import { Route as DashboardErrorsRouteImport } from './routes/dashboard/errors'
+import { Route as DashboardClientsRouteImport } from './routes/dashboard/clients'
+import { Route as DashboardBillingRouteImport } from './routes/dashboard/billing'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo.start.server-funcs'
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo.start.api-request'
 import { Route as DemoFormSimpleRouteImport } from './routes/demo.form.simple'
@@ -24,10 +36,25 @@ import { ServerRoute as ApiDemoNamesServerRouteImport } from './routes/api.demo-
 
 const rootServerRouteImport = createServerRootRoute()
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
 } as any)
 const DemoTanstackQueryRoute = DemoTanstackQueryRouteImport.update({
   id: '/demo/tanstack-query',
@@ -43,6 +70,51 @@ const DemoStoreRoute = DemoStoreRouteImport.update({
   id: '/demo/store',
   path: '/demo/store',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardUsageRoute = DashboardUsageRouteImport.update({
+  id: '/usage',
+  path: '/usage',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardTrafficRoute = DashboardTrafficRouteImport.update({
+  id: '/traffic',
+  path: '/traffic',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSecurityRoute = DashboardSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardRateLimitingRoute = DashboardRateLimitingRouteImport.update({
+  id: '/rate-limiting',
+  path: '/rate-limiting',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPerformanceRoute = DashboardPerformanceRouteImport.update({
+  id: '/performance',
+  path: '/performance',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardErrorsRoute = DashboardErrorsRouteImport.update({
+  id: '/errors',
+  path: '/errors',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardClientsRoute = DashboardClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardBillingRoute = DashboardBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => DashboardRoute,
 } as any)
 const DemoStartServerFuncsRoute = DemoStartServerFuncsRouteImport.update({
   id: '/demo/start/server-funcs',
@@ -77,9 +149,21 @@ const ApiDemoNamesServerRoute = ApiDemoNamesServerRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRouteWithChildren
+  '/login': typeof LoginRoute
+  '/dashboard/billing': typeof DashboardBillingRoute
+  '/dashboard/clients': typeof DashboardClientsRoute
+  '/dashboard/errors': typeof DashboardErrorsRoute
+  '/dashboard/performance': typeof DashboardPerformanceRoute
+  '/dashboard/rate-limiting': typeof DashboardRateLimitingRoute
+  '/dashboard/security': typeof DashboardSecurityRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/traffic': typeof DashboardTrafficRoute
+  '/dashboard/usage': typeof DashboardUsageRoute
   '/demo/store': typeof DemoStoreRoute
   '/demo/table': typeof DemoTableRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -87,9 +171,20 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/dashboard/billing': typeof DashboardBillingRoute
+  '/dashboard/clients': typeof DashboardClientsRoute
+  '/dashboard/errors': typeof DashboardErrorsRoute
+  '/dashboard/performance': typeof DashboardPerformanceRoute
+  '/dashboard/rate-limiting': typeof DashboardRateLimitingRoute
+  '/dashboard/security': typeof DashboardSecurityRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/traffic': typeof DashboardTrafficRoute
+  '/dashboard/usage': typeof DashboardUsageRoute
   '/demo/store': typeof DemoStoreRoute
   '/demo/table': typeof DemoTableRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/dashboard': typeof DashboardIndexRoute
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -98,9 +193,21 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRouteWithChildren
+  '/login': typeof LoginRoute
+  '/dashboard/billing': typeof DashboardBillingRoute
+  '/dashboard/clients': typeof DashboardClientsRoute
+  '/dashboard/errors': typeof DashboardErrorsRoute
+  '/dashboard/performance': typeof DashboardPerformanceRoute
+  '/dashboard/rate-limiting': typeof DashboardRateLimitingRoute
+  '/dashboard/security': typeof DashboardSecurityRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/traffic': typeof DashboardTrafficRoute
+  '/dashboard/usage': typeof DashboardUsageRoute
   '/demo/store': typeof DemoStoreRoute
   '/demo/table': typeof DemoTableRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -110,9 +217,21 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/dashboard'
+    | '/login'
+    | '/dashboard/billing'
+    | '/dashboard/clients'
+    | '/dashboard/errors'
+    | '/dashboard/performance'
+    | '/dashboard/rate-limiting'
+    | '/dashboard/security'
+    | '/dashboard/settings'
+    | '/dashboard/traffic'
+    | '/dashboard/usage'
     | '/demo/store'
     | '/demo/table'
     | '/demo/tanstack-query'
+    | '/dashboard/'
     | '/demo/form/address'
     | '/demo/form/simple'
     | '/demo/start/api-request'
@@ -120,9 +239,20 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
+    | '/dashboard/billing'
+    | '/dashboard/clients'
+    | '/dashboard/errors'
+    | '/dashboard/performance'
+    | '/dashboard/rate-limiting'
+    | '/dashboard/security'
+    | '/dashboard/settings'
+    | '/dashboard/traffic'
+    | '/dashboard/usage'
     | '/demo/store'
     | '/demo/table'
     | '/demo/tanstack-query'
+    | '/dashboard'
     | '/demo/form/address'
     | '/demo/form/simple'
     | '/demo/start/api-request'
@@ -130,9 +260,21 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/dashboard'
+    | '/login'
+    | '/dashboard/billing'
+    | '/dashboard/clients'
+    | '/dashboard/errors'
+    | '/dashboard/performance'
+    | '/dashboard/rate-limiting'
+    | '/dashboard/security'
+    | '/dashboard/settings'
+    | '/dashboard/traffic'
+    | '/dashboard/usage'
     | '/demo/store'
     | '/demo/table'
     | '/demo/tanstack-query'
+    | '/dashboard/'
     | '/demo/form/address'
     | '/demo/form/simple'
     | '/demo/start/api-request'
@@ -141,6 +283,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
+  LoginRoute: typeof LoginRoute
   DemoStoreRoute: typeof DemoStoreRoute
   DemoTableRoute: typeof DemoTableRoute
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
@@ -177,12 +321,33 @@ export interface RootServerRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
     }
     '/demo/tanstack-query': {
       id: '/demo/tanstack-query'
@@ -204,6 +369,69 @@ declare module '@tanstack/react-router' {
       fullPath: '/demo/store'
       preLoaderRoute: typeof DemoStoreRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/usage': {
+      id: '/dashboard/usage'
+      path: '/usage'
+      fullPath: '/dashboard/usage'
+      preLoaderRoute: typeof DashboardUsageRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/traffic': {
+      id: '/dashboard/traffic'
+      path: '/traffic'
+      fullPath: '/dashboard/traffic'
+      preLoaderRoute: typeof DashboardTrafficRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/security': {
+      id: '/dashboard/security'
+      path: '/security'
+      fullPath: '/dashboard/security'
+      preLoaderRoute: typeof DashboardSecurityRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/rate-limiting': {
+      id: '/dashboard/rate-limiting'
+      path: '/rate-limiting'
+      fullPath: '/dashboard/rate-limiting'
+      preLoaderRoute: typeof DashboardRateLimitingRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/performance': {
+      id: '/dashboard/performance'
+      path: '/performance'
+      fullPath: '/dashboard/performance'
+      preLoaderRoute: typeof DashboardPerformanceRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/errors': {
+      id: '/dashboard/errors'
+      path: '/errors'
+      fullPath: '/dashboard/errors'
+      preLoaderRoute: typeof DashboardErrorsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/clients': {
+      id: '/dashboard/clients'
+      path: '/clients'
+      fullPath: '/dashboard/clients'
+      preLoaderRoute: typeof DashboardClientsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/billing': {
+      id: '/dashboard/billing'
+      path: '/billing'
+      fullPath: '/dashboard/billing'
+      preLoaderRoute: typeof DashboardBillingRouteImport
+      parentRoute: typeof DashboardRoute
     }
     '/demo/start/server-funcs': {
       id: '/demo/start/server-funcs'
@@ -254,8 +482,40 @@ declare module '@tanstack/react-start/server' {
   }
 }
 
+interface DashboardRouteChildren {
+  DashboardBillingRoute: typeof DashboardBillingRoute
+  DashboardClientsRoute: typeof DashboardClientsRoute
+  DashboardErrorsRoute: typeof DashboardErrorsRoute
+  DashboardPerformanceRoute: typeof DashboardPerformanceRoute
+  DashboardRateLimitingRoute: typeof DashboardRateLimitingRoute
+  DashboardSecurityRoute: typeof DashboardSecurityRoute
+  DashboardSettingsRoute: typeof DashboardSettingsRoute
+  DashboardTrafficRoute: typeof DashboardTrafficRoute
+  DashboardUsageRoute: typeof DashboardUsageRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardBillingRoute: DashboardBillingRoute,
+  DashboardClientsRoute: DashboardClientsRoute,
+  DashboardErrorsRoute: DashboardErrorsRoute,
+  DashboardPerformanceRoute: DashboardPerformanceRoute,
+  DashboardRateLimitingRoute: DashboardRateLimitingRoute,
+  DashboardSecurityRoute: DashboardSecurityRoute,
+  DashboardSettingsRoute: DashboardSettingsRoute,
+  DashboardTrafficRoute: DashboardTrafficRoute,
+  DashboardUsageRoute: DashboardUsageRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRouteWithChildren,
+  LoginRoute: LoginRoute,
   DemoStoreRoute: DemoStoreRoute,
   DemoTableRoute: DemoTableRoute,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
