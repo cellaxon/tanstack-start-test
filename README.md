@@ -11,49 +11,179 @@ pnpm start
 
 # Building For Production
 
-## Static Build (Client-Side Only)
+This project supports multiple build strategies for different deployment scenarios:
 
-This project supports static site generation for deployment to static hosting services like Netlify, Vercel, GitHub Pages, etc.
+## Build Strategies Comparison
 
-### Build Commands
+| Build Type | Command | Output | Use Case |
+|-----------|---------|--------|----------|
+| **SSR** | `pnpm build` | `.output/` | Node.js server deployment |
+| **SPA** | `pnpm build:static` | `dist/` | Single-page application |
+| **SSG** | `pnpm build:ssg` | `dist-ssg/` | Static site with individual HTML files |
+| **SSG Advanced** | `pnpm build:ssg:advanced` | `dist-ssg/` | SEO-optimized static site |
+
+## 1. SSR Build (Server-Side Rendering)
+
+Default TanStack Start build with server-side rendering:
 
 ```bash
-# Standard build with TanStack Start SSR
+# Build
 pnpm build
 
-# Static build (pure client-side, no SSR)
+# Run production server
+pnpm start
+```
+
+**Output:** `.output/` directory with Node.js server
+**Best for:** Dynamic content, real-time data, user authentication
+
+## 2. SPA Build (Single-Page Application)
+
+Client-side only build with single `index.html`:
+
+```bash
+# Build
 pnpm build:static
 
-# Preview static build locally
+# Preview locally
 pnpm serve
 ```
 
-### Static Build Output
-
-✅ **Static build features:**
-- Output directory: `dist/`
-- Contains static HTML, CSS, and JavaScript files
-- Optimized code splitting (react-vendor, tanstack-vendor, d3-vendor)
-- Ready for deployment to any static hosting service
-
-### Deployment
-
-After running `pnpm build:static`, you can deploy the contents of the `dist/` folder to:
-- **Netlify**: Drag and drop the dist folder
-- **Vercel**: Deploy with `vercel --prod`
-- **GitHub Pages**: Push dist contents to gh-pages branch
-- **AWS S3**: Upload dist contents to S3 bucket
-- **Any static hosting service**
-
-## Standard Build (With SSR)
-
-For server-side rendering with TanStack Start:
-
-```bash
-pnpm build
+**Output structure:**
+```
+dist/
+├── index.html          # Single HTML file for all routes
+├── assets/            # JS/CSS bundles
+└── _redirects         # Routing configuration
 ```
 
-This creates SSR-ready output in `.output/` directory.
+**Best for:** Interactive apps, admin dashboards, when SEO is not critical
+
+## 3. SSG Build (Static Site Generation)
+
+Generates individual HTML files for each route:
+
+```bash
+# Basic SSG build
+pnpm build:ssg
+
+# Advanced SSG with SEO optimization
+pnpm build:ssg:advanced
+
+# Preview locally
+pnpm serve:ssg
+```
+
+**Output structure:**
+```
+dist-ssg/
+├── index.html                    # Home page
+├── login/
+│   └── index.html               # /login route
+├── dashboard/
+│   ├── index.html               # /dashboard route
+│   ├── billing/
+│   │   └── index.html          # /dashboard/billing route
+│   └── ...                     # Other dashboard subroutes
+├── assets/                     # Shared JS/CSS bundles
+├── sitemap.xml                  # SEO sitemap (advanced only)
+└── robots.txt                   # Crawler configuration
+```
+
+**SSG Advanced features:**
+- Individual meta tags per page (title, description)
+- Relative asset paths for subdirectory deployment
+- Canonical URLs
+- Sitemap generation
+- SEO-friendly structure
+
+**Best for:** Marketing sites, blogs, documentation, when SEO is important
+
+## Deployment Guides
+
+### Netlify
+
+All build types work with Netlify:
+
+```bash
+# Using netlify.toml (already configured)
+git push origin main
+```
+
+Or drag & drop the output folder to Netlify dashboard.
+
+### Vercel
+
+```bash
+# Deploy with Vercel CLI
+vercel --prod
+
+# vercel.json already configured for SPA routing
+```
+
+### GitHub Pages
+
+For SSG builds (recommended for GitHub Pages):
+
+```bash
+# Build
+pnpm build:ssg
+
+# Deploy using gh-pages
+npx gh-pages -d dist-ssg
+```
+
+### AWS S3 + CloudFront
+
+```bash
+# Build
+pnpm build:ssg  # or build:static
+
+# Deploy using included script
+./scripts/deploy-s3.sh your-bucket-name
+
+# Or manual upload
+aws s3 sync dist-ssg/ s3://your-bucket/ --delete
+```
+
+**Note:** S3 configuration files included:
+- `aws/cloudfront-config.json` - CloudFront settings
+- `aws/cloudfront-functions.js` - SPA routing function
+- `scripts/deploy-s3.sh` - Automated deployment script
+
+### Static Hosting Services
+
+Any static hosting service (Surge, Firebase Hosting, etc.) can use:
+- `dist/` folder for SPA builds
+- `dist-ssg/` folder for SSG builds
+
+## Routing Configuration
+
+The project includes routing configuration for all major platforms:
+
+| Platform | Config File | Purpose |
+|----------|------------|---------|
+| Netlify | `netlify.toml`, `_redirects` | SPA routing support |
+| Vercel | `vercel.json` | Rewrite rules for SPA |
+| GitHub Pages | `404.html` | Client-side routing fallback |
+| Local dev | `serve.json` | Local preview server config |
+
+## Build Performance
+
+All builds are optimized with:
+- Code splitting (vendor chunks)
+- Minification (esbuild)
+- Tree shaking
+- Compression-ready output
+
+## Choosing the Right Build
+
+- **Need SEO?** → Use SSG (`build:ssg:advanced`)
+- **Need authentication/dynamic data?** → Use SSR (`build`) or SPA (`build:static`)
+- **Deploying to static hosting?** → Use SSG or SPA
+- **Have a Node.js server?** → Use SSR
+- **Want fastest deployment?** → Use SPA
+- **Want best initial load time?** → Use SSG
 
 ## Testing
 

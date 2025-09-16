@@ -7,12 +7,16 @@ import './styles.css'
 
 const queryClient = new QueryClient()
 
+// Check if we have a pre-rendered route
+const initialRoute = (window as any).__INITIAL_ROUTE__ || window.location.pathname
+
 const router = createRouter({
   routeTree,
   context: {
     queryClient,
   },
   defaultPreload: 'intent',
+  basepath: initialRoute !== window.location.pathname ? initialRoute : undefined,
 })
 
 declare module '@tanstack/react-router' {
