@@ -1,36 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-import { Payment, columns } from "@/app/columns"
+import { apiPerformanceColumns } from "@/app/columns_api_performance"
+import { apiPerformanceData } from "@/app/data_api_performance"
+import { userUsageColumns } from "@/app/columns_user_usage"
+import { userUsageData } from "@/app/data_user_usage"
 import { DataTable } from "@/components/DataTable"
-
-// 샘플 데이터
-const data: Payment[] = [
-  {
-    id: "728ed52f",
-    amount: 100,
-    status: "pending",
-    email: "m@example.com",
-  },
-  {
-    id: "489e1d42",
-    amount: 125,
-    status: "processing",
-    email: "example@gmail.com",
-  },
-  {
-    id: "489e1d42",
-    amount: 250,
-    status: "success",
-    email: "a@example.com",
-  },
-  {
-    id: "489e1d42",
-    amount: 150,
-    status: "failed",
-    email: "b@example.com",
-  },
-]
 
 export const Route = createFileRoute('/dashboard/performance')({
   component: PerformancePage,
@@ -53,22 +28,22 @@ function PerformancePage() {
       </div>
 
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Response Time Trend</CardTitle>
+            <CardTitle>API Performance</CardTitle>
           </CardHeader>
           <CardContent>
-            <DataTable columns={columns} data={data} />
+            <DataTable columns={apiPerformanceColumns} data={apiPerformanceData} />
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader>
-            <CardTitle>Response Time Trend 2</CardTitle>
+            <CardTitle>User Usage</CardTitle>
           </CardHeader>
           <CardContent>
-            <DataTable columns={columns} data={data} />
+            <DataTable columns={userUsageColumns} data={userUsageData} />
           </CardContent>
         </Card>
       </div>
