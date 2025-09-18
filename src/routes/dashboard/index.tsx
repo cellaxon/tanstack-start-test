@@ -102,7 +102,6 @@ function DashboardPage() {
             {requestVolumeQuery.data && requestVolumeQuery.data.length > 0 ? (
               <LineChart
                 data={requestVolumeQuery.data}
-                width={500}
                 height={300}
                 color="#3b82f6"
               />
@@ -122,7 +121,6 @@ function DashboardPage() {
             {methodsQuery.data && methodsQuery.data.length > 0 ? (
               <BarChart
                 data={methodsQuery.data}
-                width={500}
                 height={300}
                 color="#10b981"
               />
@@ -142,7 +140,6 @@ function DashboardPage() {
             {statusQuery.data && statusQuery.data.length > 0 ? (
               <PieChart
                 data={statusQuery.data}
-                width={500}
                 height={350}
               />
             ) : (
@@ -161,7 +158,6 @@ function DashboardPage() {
             {responseTimeQuery.data && responseTimeQuery.data.length > 0 ? (
               <LineChart
                 data={responseTimeQuery.data}
-                width={500}
                 height={300}
                 color="#8b5cf6"
               />

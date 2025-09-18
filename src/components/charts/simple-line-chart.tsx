@@ -151,6 +151,20 @@ export function SimpleLineChart({
     // Tooltip text group
     const tooltipTextGroup = crosshairGroup.append('g');
 
+    // Focus circles to highlight current points
+    const focusCircle1 = crosshairGroup.append('circle')
+      .attr('r', 4)
+      .attr('fill', color)
+      .attr('stroke', 'white')
+      .attr('stroke-width', 2);
+
+    const focusCircle2 = crosshairGroup.append('circle')
+      .attr('r', 4)
+      .attr('fill', color2)
+      .attr('stroke', 'white')
+      .attr('stroke-width', 2)
+      .style('display', label2 ? 'block' : 'none');
+
     // Create overlay for mouse events
     const overlay = g.append('rect')
       .attr('width', innerWidth)
@@ -168,10 +182,24 @@ export function SimpleLineChart({
 
         const closestData = data[closestIndex];
         const xPos = xScale(closestData.label) || 0;
+        const yPos1 = yScale(closestData.value);
+        const yPos2 = closestData.value2 !== undefined ? yScale(closestData.value2) : 0;
 
         // Update crosshair position
         verticalLine.attr('x1', xPos).attr('x2', xPos);
         horizontalLine.attr('y1', mouseY).attr('y2', mouseY);
+
+        // Update focus circles position
+        focusCircle1.attr('cx', xPos).attr('cy', yPos1);
+
+        if (label2 && closestData.value2 !== undefined) {
+          focusCircle2
+            .attr('cx', xPos)
+            .attr('cy', yPos2)
+            .style('display', 'block');
+        } else {
+          focusCircle2.style('display', 'none');
+        }
 
         // Prepare tooltip text
         const tooltipTexts = [

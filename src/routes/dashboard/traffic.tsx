@@ -41,7 +41,6 @@ function TrafficPage() {
           <CardContent>
             <LineChart
               data={generateTimeSeriesData()}
-              width={500}
               height={300}
               color="#3b82f6"
             />
@@ -55,7 +54,6 @@ function TrafficPage() {
           <CardContent>
             <BarChart
               data={endpointData}
-              width={500}
               height={300}
               color="#059669"
             />

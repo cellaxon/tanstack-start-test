@@ -8,7 +8,6 @@ interface BarDataPoint {
 
 interface BarChartProps {
   data: BarDataPoint[]
-  width?: number
   height?: number
   color?: string
   title?: string
@@ -16,23 +15,25 @@ interface BarChartProps {
 
 export function BarChart({
   data,
-  width = 600,
-  height = 400,
+  height = 300,
   color = '#10b981',
   title
 }: BarChartProps) {
-  const svgRef = useRef<SVGSVGElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!svgRef.current || !data.length) return
+    if (!containerRef.current || !data.length) return
 
+    const container = containerRef.current
+    const width = container.clientWidth
     const margin = { top: 20, right: 30, bottom: 60, left: 50 }
     const innerWidth = width - margin.left - margin.right
     const innerHeight = height - margin.top - margin.bottom
 
-    d3.select(svgRef.current).selectAll("*").remove()
+    d3.select(container).selectAll("*").remove()
 
-    const svg = d3.select(svgRef.current)
+    const svg = d3.select(container)
+      .append('svg')
       .attr("width", width)
       .attr("height", height)
 
@@ -207,14 +208,12 @@ export function BarChart({
         crosshairGroup.style('display', 'none')
         tooltip.style('display', 'none')
       })
-  }, [data, width, height, color])
+  }, [data, height, color])
 
   return (
     <div>
       {title && <h3 className="text-lg font-semibold mb-2">{title}</h3>}
-      <svg ref={svgRef} role="img" aria-label={title || "Bar chart"}>
-        <title>{title || "Bar chart"}</title>
-      </svg>
+      <div ref={containerRef} style={{ width: '100%', height }} />
     </div>
   )
 }

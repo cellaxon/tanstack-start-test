@@ -8,28 +8,29 @@ interface PieDataPoint {
 
 interface PieChartProps {
   data: PieDataPoint[]
-  width?: number
   height?: number
   title?: string
 }
 
 export function PieChart({
   data,
-  width = 400,
-  height = 400,
+  height = 350,
   title
 }: PieChartProps) {
-  const svgRef = useRef<SVGSVGElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!svgRef.current || !data.length) return
+    if (!containerRef.current || !data.length) return
 
+    const container = containerRef.current
+    const width = container.clientWidth
     const radius = Math.min(width, height) / 2
     const margin = 40
 
-    d3.select(svgRef.current).selectAll("*").remove()
+    d3.select(container).selectAll("*").remove()
 
-    const svg = d3.select(svgRef.current)
+    const svg = d3.select(container)
+      .append('svg')
       .attr("width", width)
       .attr("height", height)
 
@@ -118,12 +119,12 @@ export function PieChart({
     return () => {
       d3.select("body").selectAll(".d3-tooltip").remove()
     }
-  }, [data, width, height])
+  }, [data, height])
 
   return (
     <div>
       {title && <h3 className="text-lg font-semibold mb-2">{title}</h3>}
-      <svg ref={svgRef} role="img" aria-label={title ?? 'Pie chart'} />
+      <div ref={containerRef} style={{ width: '100%', height }} />
     </div>
   )
 }
