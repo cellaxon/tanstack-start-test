@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.js';
 import apiRoutes from './routes/api.js';
 import proxyRoutes from './routes/proxy.js';
 import metricsRoutes from './routes/metrics.js';
+import dashboardRoutes from './routes/dashboard.js';
 import { authenticateToken } from './middleware/auth.js';
 import { startMonitoring } from './services/monitoring.js';
 
@@ -25,6 +26,7 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/proxy', proxyRoutes);
 app.use('/api/metrics', metricsRoutes); // Public metrics endpoint
+app.use('/api/dashboard', dashboardRoutes); // Public dashboard endpoint
 app.use('/api', authenticateToken, apiRoutes);
 
 app.get('/health', (req, res) => {

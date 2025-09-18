@@ -31,18 +31,52 @@ export function SystemMetricsChart() {
 
   const formatTimeLabel = (timestamp: string) => {
     const date = new Date(timestamp);
+    // Use local time zone explicitly
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    };
+
     if (timeRange === '1m' || timeRange === '5m') {
-      return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    } else if (timeRange === '1h') {
-      return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-    } else if (timeRange === '1d') {
-      return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      // Show HH:mm:ss format with AM/PM
+      return date.toLocaleTimeString('ko-KR', {
+        ...options,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+    } else if (timeRange === '1h' || timeRange === '1d') {
+      // Show HH:mm format with AM/PM
+      return date.toLocaleTimeString('ko-KR', {
+        ...options,
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
     } else if (timeRange === '1w') {
-      return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}시`;
+      // Show MM/DD HH시 format
+      return date.toLocaleDateString('ko-KR', {
+        ...options,
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        hour12: false
+      }).replace(/\. /g, '/').replace(/\./g, '').replace(/(\d+)$/, '$1시');
     } else if (timeRange === '1M') {
-      return `${date.getMonth()+1}/${date.getDate()}`;
+      // Show MM/DD format
+      return date.toLocaleDateString('ko-KR', {
+        ...options,
+        month: 'numeric',
+        day: 'numeric'
+      }).replace(/\. /g, '/').replace(/\./g, '');
     } else {
-      return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+      // Show YYYY-MM-DD format
+      return date.toLocaleDateString('ko-KR', {
+        ...options,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).replace(/\. /g, '-').replace(/\./g, '');
     }
   };
 

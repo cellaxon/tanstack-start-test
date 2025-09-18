@@ -41,6 +41,11 @@ function initializeDatabase() {
 
       // Create index for faster queries
       db.run(`CREATE INDEX IF NOT EXISTS idx_timestamp ON system_metrics(timestamp DESC)`);
+
+      // Try to add swap columns if they don't exist (for existing databases)
+      db.run(`ALTER TABLE system_metrics ADD COLUMN swap_usage REAL`, () => {});
+      db.run(`ALTER TABLE system_metrics ADD COLUMN swap_total REAL`, () => {});
+      db.run(`ALTER TABLE system_metrics ADD COLUMN swap_free REAL`, () => {});
     }
   });
 }

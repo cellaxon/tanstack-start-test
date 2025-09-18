@@ -5,69 +5,57 @@ import { BarChart } from '@/components/charts/bar-chart'
 import { PieChart } from '@/components/charts/pie-chart'
 import { SystemMetricsChart } from '@/components/charts/system-metrics-chart'
 import { Activity, Users, Clock, AlertCircle } from 'lucide-react'
+import {
+  useDashboardStats,
+  useRequestVolume,
+  useMethodsDistribution,
+  useStatusDistribution,
+  useResponseTimeTrend
+} from '@/hooks/useDashboardData'
 
 export const Route = createFileRoute('/dashboard/')({
   component: DashboardPage,
 })
 
 function DashboardPage() {
-  // Generate sample data
-  const generateTimeSeriesData = () => {
-    const data = []
-    const now = new Date()
-    for (let i = 24; i >= 0; i--) {
-      data.push({
-        date: new Date(now.getTime() - i * 60 * 60 * 1000),
-        value: Math.floor(Math.random() * 500) + 100
-      })
-    }
-    return data
-  }
+  // Fetch data from API
+  const statsQuery = useDashboardStats();
+  const requestVolumeQuery = useRequestVolume();
+  const methodsQuery = useMethodsDistribution();
+  const statusQuery = useStatusDistribution();
+  const responseTimeQuery = useResponseTimeTrend();
 
-  const barChartData = [
-    { label: 'GET', value: 4500 },
-    { label: 'POST', value: 2300 },
-    { label: 'PUT', value: 1200 },
-    { label: 'DELETE', value: 800 },
-    { label: 'PATCH', value: 400 }
-  ]
-
-  const pieChartData = [
-    { label: 'Success', value: 8500 },
-    { label: '4xx Errors', value: 1200 },
-    { label: '5xx Errors', value: 300 }
-  ]
-
-  const stats = [
+  // Map stats data
+  const stats = statsQuery.data ? [
     {
       title: 'Total Requests',
-      value: '1.2M',
-      change: '+12.3%',
+      value: statsQuery.data.totalRequests.formatted,
+      change: `${Number(statsQuery.data.totalRequests.change) > 0 ? '+' : ''}${statsQuery.data.totalRequests.change}%`,
       icon: Activity,
       color: 'text-blue-600'
     },
     {
       title: 'Active Clients',
-      value: '342',
-      change: '+5.2%',
+      value: statsQuery.data.activeClients.value.toString(),
+      change: `+${statsQuery.data.activeClients.change}%`,
       icon: Users,
       color: 'text-green-600'
     },
     {
       title: 'Avg Response Time',
-      value: '124ms',
-      change: '-8.1%',
+      value: statsQuery.data.avgResponseTime.formatted,
+      change: `${statsQuery.data.avgResponseTime.change}%`,
       icon: Clock,
       color: 'text-purple-600'
     },
     {
       title: 'Error Rate',
-      value: '0.8%',
-      change: '-2.3%',
+      value: statsQuery.data.errorRate.formatted,
+      change: `${statsQuery.data.errorRate.change}%`,
       icon: AlertCircle,
       color: 'text-red-600'
     }
-  ]
+  ] : []
 
   return (
     <div>
@@ -111,12 +99,18 @@ function DashboardPage() {
             <CardTitle>Request Volume (24 Hours)</CardTitle>
           </CardHeader>
           <CardContent>
-            <LineChart
-              data={generateTimeSeriesData()}
-              width={500}
-              height={300}
-              color="#3b82f6"
-            />
+            {requestVolumeQuery.data && requestVolumeQuery.data.length > 0 ? (
+              <LineChart
+                data={requestVolumeQuery.data}
+                width={500}
+                height={300}
+                color="#3b82f6"
+              />
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                {requestVolumeQuery.isLoading ? 'Loading...' : 'No data available'}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -125,12 +119,18 @@ function DashboardPage() {
             <CardTitle>API Methods Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <BarChart
-              data={barChartData}
-              width={500}
-              height={300}
-              color="#10b981"
-            />
+            {methodsQuery.data && methodsQuery.data.length > 0 ? (
+              <BarChart
+                data={methodsQuery.data}
+                width={500}
+                height={300}
+                color="#10b981"
+              />
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                {methodsQuery.isLoading ? 'Loading...' : 'No data available'}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -139,11 +139,17 @@ function DashboardPage() {
             <CardTitle>Response Status Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <PieChart
-              data={pieChartData}
-              width={500}
-              height={350}
-            />
+            {statusQuery.data && statusQuery.data.length > 0 ? (
+              <PieChart
+                data={statusQuery.data}
+                width={500}
+                height={350}
+              />
+            ) : (
+              <div className="h-[350px] flex items-center justify-center text-muted-foreground">
+                {statusQuery.isLoading ? 'Loading...' : 'No data available'}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -152,12 +158,18 @@ function DashboardPage() {
             <CardTitle>Response Time Trend</CardTitle>
           </CardHeader>
           <CardContent>
-            <LineChart
-              data={generateTimeSeriesData().map(d => ({ ...d, value: Math.random() * 200 + 50 }))}
-              width={500}
-              height={300}
-              color="#8b5cf6"
-            />
+            {responseTimeQuery.data && responseTimeQuery.data.length > 0 ? (
+              <LineChart
+                data={responseTimeQuery.data}
+                width={500}
+                height={300}
+                color="#8b5cf6"
+              />
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                {responseTimeQuery.isLoading ? 'Loading...' : 'No data available'}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

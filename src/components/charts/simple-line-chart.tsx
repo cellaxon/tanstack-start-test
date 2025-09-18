@@ -27,7 +27,7 @@ export function SimpleLineChart({
 
     const container = containerRef.current;
     const width = container.clientWidth;
-    const margin = { top: 20, right: 30, bottom: 40, left: 50 };
+    const margin = { top: 20, right: 30, bottom: 60, left: 50 };  // Increased bottom margin for time labels
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
 
