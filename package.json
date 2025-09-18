@@ -4,13 +4,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 3000",
+    "dev:server": "cd server && npm run dev",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:server\"",
     "build": "vite build -c vite.config.ssg.ts && node scripts/ssg-advanced.js",
     "serve": "npx serve dist-ssg -p 3000",
     "test:ssg": "node scripts/test-ssg.js",
     "test": "vitest run",
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check"
+    "check": "biome check",
+    "server:install": "cd server && npm install"
   },
   "dependencies": {
     "@faker-js/faker": "^9.6.0",
@@ -46,6 +49,7 @@
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.2.1",
     "jsdom": "^26.0.0",
     "typescript": "^5.7.2",
     "vite": "^6.3.5",
