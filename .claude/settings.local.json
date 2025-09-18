@@ -8,7 +8,9 @@
       "Bash(curl:*)",
       "Bash(node:*)",
       "Bash(pnpm add:*)",
-      "Bash(pnpm run dev:*)"
+      "Bash(pnpm run dev:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c:*)"
     ],
     "deny": [],
     "ask": []

@@ -23,6 +23,9 @@ function initializeDatabase() {
       memory_usage REAL,
       memory_total REAL,
       memory_free REAL,
+      swap_usage REAL,
+      swap_total REAL,
+      swap_free REAL,
       process_cpu REAL,
       process_memory REAL,
       network_rx REAL,
@@ -47,9 +50,10 @@ export function saveMetrics(metrics) {
     const sql = `
       INSERT INTO system_metrics (
         cpu_usage, memory_usage, memory_total, memory_free,
+        swap_usage, swap_total, swap_free,
         process_cpu, process_memory, network_rx, network_tx,
         disk_usage, disk_total
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.run(sql, [
@@ -57,6 +61,9 @@ export function saveMetrics(metrics) {
       metrics.memory_usage,
       metrics.memory_total,
       metrics.memory_free,
+      metrics.swap_usage || 0,
+      metrics.swap_total || 0,
+      metrics.swap_free || 0,
       metrics.process_cpu,
       metrics.process_memory,
       metrics.network_rx || 0,
@@ -121,6 +128,9 @@ export function getMetrics(duration) {
         AVG(memory_usage) as memory_usage,
         AVG(memory_total) as memory_total,
         AVG(memory_free) as memory_free,
+        AVG(swap_usage) as swap_usage,
+        AVG(swap_total) as swap_total,
+        AVG(swap_free) as swap_free,
         AVG(process_cpu) as process_cpu,
         AVG(process_memory) as process_memory,
         AVG(network_rx) as network_rx,

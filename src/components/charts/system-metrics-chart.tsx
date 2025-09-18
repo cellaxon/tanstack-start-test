@@ -154,6 +154,29 @@ export function SystemMetricsChart() {
         </Card>
       </div>
 
+      {/* Swap Memory Card */}
+      {currentQuery.data?.swap_total && currentQuery.data.swap_total > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Swap Usage</CardTitle>
+              <MemoryStick className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {currentQuery.data?.swap_usage?.toFixed(1) || 0}%
+              </div>
+              {currentQuery.data && (
+                <p className="text-xs text-muted-foreground">
+                  {formatBytes((currentQuery.data.swap_total || 0) - (currentQuery.data.swap_free || 0))} /
+                  {formatBytes(currentQuery.data.swap_total || 0)}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
@@ -193,6 +216,7 @@ export function SystemMetricsChart() {
                 label="Memory Usage (%)"
                 color="#10b981"
                 height={250}
+                yMax={100}
               />
             ) : (
               <div className="h-[250px] flex items-center justify-center text-muted-foreground">
@@ -244,6 +268,7 @@ export function SystemMetricsChart() {
                 label="Disk Usage (%)"
                 color="#f43f5e"
                 height={250}
+                yMax={100}
               />
             ) : (
               <div className="h-[250px] flex items-center justify-center text-muted-foreground">
@@ -252,6 +277,27 @@ export function SystemMetricsChart() {
             )}
           </CardContent>
         </Card>
+
+        {/* Swap Memory Chart - Only show if swap is available */}
+        {sortedData && sortedData.length > 0 && sortedData.some(m => (m.swap_total || 0) > 0) && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Swap Usage Over Time</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SimpleLineChart
+                data={sortedData.map(m => ({
+                  label: formatTimeLabel(m.timestamp),
+                  value: Number((m.swap_usage || 0).toFixed(2)),
+                }))}
+                label="Swap Usage (%)"
+                color="#8b5cf6"
+                height={250}
+                yMax={100}
+              />
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

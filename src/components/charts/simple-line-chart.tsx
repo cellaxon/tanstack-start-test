@@ -8,6 +8,7 @@ interface SimpleLineChartProps {
   color?: string;
   color2?: string;
   height?: number;
+  yMax?: number;  // Optional max value for Y axis
 }
 
 export function SimpleLineChart({
@@ -17,6 +18,7 @@ export function SimpleLineChart({
   color = '#3b82f6',
   color2 = '#f59e0b',
   height = 300,
+  yMax,
 }: SimpleLineChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -46,9 +48,9 @@ export function SimpleLineChart({
       .range([0, innerWidth])
       .padding(0.1);
 
-    const maxValue = d3.max(data, d => Math.max(d.value, d.value2 || 0)) || 0;
+    const maxValue = yMax || d3.max(data, d => Math.max(d.value, d.value2 || 0)) || 0;
     const yScale = d3.scaleLinear()
-      .domain([0, maxValue * 1.1])
+      .domain([0, yMax ? yMax : maxValue * 1.1])
       .range([innerHeight, 0]);
 
     // X axis
@@ -118,7 +120,7 @@ export function SimpleLineChart({
         .text(d => d);
     }
 
-  }, [data, color, color2, height, label, label2]);
+  }, [data, color, color2, height, label, label2, yMax]);
 
   return <div ref={containerRef} style={{ width: '100%', height }} />;
 }

@@ -8,6 +8,9 @@ interface SystemMetric {
   memory_usage: number;
   memory_total: number;
   memory_free: number;
+  swap_usage?: number;
+  swap_total?: number;
+  swap_free?: number;
   process_cpu: number;
   process_memory: number;
   network_rx: number;

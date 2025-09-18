@@ -13,6 +13,11 @@ async function collectSystemMetrics() {
     // Get memory information
     const memData = await si.mem();
 
+    // Calculate swap usage percentage
+    const swapUsage = memData.swaptotal > 0
+      ? ((memData.swapused / memData.swaptotal) * 100)
+      : 0;
+
     // Get process information
     const processData = process.cpuUsage();
     const processMemory = process.memoryUsage();
@@ -54,6 +59,9 @@ async function collectSystemMetrics() {
       memory_usage: ((memData.used / memData.total) * 100) || 0,
       memory_total: memData.total || 0,
       memory_free: memData.free || 0,
+      swap_usage: swapUsage || 0,
+      swap_total: memData.swaptotal || 0,
+      swap_free: memData.swapfree || 0,
       process_cpu: (processData.user + processData.system) / 1000000 || 0, // Convert to seconds
       process_memory: processMemory.heapUsed || 0,
       network_rx: networkRx,
