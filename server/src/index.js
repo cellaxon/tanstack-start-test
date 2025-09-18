@@ -5,7 +5,9 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import apiRoutes from './routes/api.js';
 import proxyRoutes from './routes/proxy.js';
+import metricsRoutes from './routes/metrics.js';
 import { authenticateToken } from './middleware/auth.js';
+import { startMonitoring } from './services/monitoring.js';
 
 dotenv.config();
 
@@ -22,6 +24,7 @@ app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/proxy', proxyRoutes);
+app.use('/api/metrics', metricsRoutes); // Public metrics endpoint
 app.use('/api', authenticateToken, apiRoutes);
 
 app.get('/health', (req, res) => {
@@ -36,4 +39,8 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Mock server running on http://localhost:${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
+  console.log(`Metrics API: http://localhost:${PORT}/api/metrics`);
+
+  // Start system monitoring
+  startMonitoring();
 });

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { LineChart } from '@/components/charts/line-chart'
 import { BarChart } from '@/components/charts/bar-chart'
 import { PieChart } from '@/components/charts/pie-chart'
+import { SystemMetricsChart } from '@/components/charts/system-metrics-chart'
 import { Activity, Users, Clock, AlertCircle } from 'lucide-react'
 
 export const Route = createFileRoute('/dashboard/')({
@@ -96,6 +97,11 @@ function DashboardPage() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* System Metrics Section */}
+      <div className="mb-8">
+        <SystemMetricsChart />
       </div>
 
       {/* Charts Grid */}

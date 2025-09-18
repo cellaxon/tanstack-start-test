@@ -1,13 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install:*)",
-      "Bash(npm run dev:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm run dev:*)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(curl:*)",
       "Bash(node:*)",
-      "Bash(pnpm add:*)"
+      "Bash(pnpm add:*)",
+      "Bash(pnpm run dev:*)"
     ],
     "deny": [],
     "ask": []
