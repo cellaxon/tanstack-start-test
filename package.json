@@ -13,7 +13,8 @@
     "format": "biome format",
     "lint": "biome lint",
     "check": "biome check",
-    "server:install": "cd server && npm install"
+    "server:install": "cd server && pnpm install",
+    "build:serve": "pnpm run build && concurrently \"pnpm run serve\" \"pnpm run dev:server\""
   },
   "dependencies": {
     "@faker-js/faker": "^9.6.0",
