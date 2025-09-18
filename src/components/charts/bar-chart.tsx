@@ -58,17 +58,7 @@ export function BarChart({
     g.append("g")
       .call(d3.axisLeft(yScale))
 
-    const tooltip = d3.select("body").append("div")
-      .attr("class", "d3-tooltip")
-      .style("opacity", 0)
-      .style("position", "absolute")
-      .style("background", "rgba(0, 0, 0, 0.8)")
-      .style("color", "white")
-      .style("padding", "8px")
-      .style("border-radius", "4px")
-      .style("font-size", "12px")
-      .style("pointer-events", "none")
-
+    // Add bars first with animation
     g.selectAll(".bar")
       .data(data)
       .enter().append("rect")
@@ -78,25 +68,145 @@ export function BarChart({
       .attr("y", innerHeight)
       .attr("height", 0)
       .attr("fill", color)
-      .on("mouseover", function(event, d) {
-        d3.select(this).attr("opacity", 0.7)
-        tooltip.transition().duration(200).style("opacity", .9)
-        tooltip.html(`${d.label}: ${d.value}`)
-          .style("left", `${event.pageX + 10}px`)
-          .style("top", `${event.pageY - 28}px`)
-      })
-      .on("mouseout", function() {
-        d3.select(this).attr("opacity", 1)
-        tooltip.transition().duration(500).style("opacity", 0)
-      })
       .transition()
       .duration(800)
       .attr("y", d => yScale(d.value))
       .attr("height", d => innerHeight - yScale(d.value))
 
-    return () => {
-      d3.select("body").selectAll(".d3-tooltip").remove()
-    }
+    // Add crosshair and tooltip
+    const crosshairGroup = g.append('g')
+      .style('display', 'none')
+
+    // Vertical line
+    const verticalLine = crosshairGroup.append('line')
+      .attr('y1', 0)
+      .attr('y2', innerHeight)
+      .attr('stroke', '#999')
+      .attr('stroke-width', 1)
+      .attr('stroke-dasharray', '3,3')
+      .style('pointer-events', 'none')
+
+    // Horizontal line
+    const horizontalLine = crosshairGroup.append('line')
+      .attr('x1', 0)
+      .attr('x2', innerWidth)
+      .attr('stroke', '#999')
+      .attr('stroke-width', 1)
+      .attr('stroke-dasharray', '3,3')
+      .style('pointer-events', 'none')
+
+    // Tooltip
+    const tooltip = g.append('g')
+      .style('display', 'none')
+      .style('pointer-events', 'none')
+
+    const tooltipBg = tooltip.append('rect')
+      .attr('fill', 'rgba(0, 0, 0, 0.8)')
+      .attr('rx', 4)
+      .attr('ry', 4)
+
+    const tooltipText = tooltip.append('text')
+      .attr('fill', 'white')
+      .attr('font-size', '12px')
+
+    // Create overlay for mouse events
+    const overlay = g.append('rect')
+      .attr('width', innerWidth)
+      .attr('height', innerHeight)
+      .attr('fill', 'none')
+      .attr('pointer-events', 'all')
+      .on('mousemove', function(event) {
+        const [mouseX, mouseY] = d3.pointer(event)
+
+        // Find which bar we're hovering over
+        let hoveredBar = null
+        let hoveredData = null
+
+        data.forEach((d) => {
+          const x = xScale(d.label) as number
+          const width = xScale.bandwidth()
+          if (mouseX >= x && mouseX <= x + width) {
+            hoveredBar = d
+            hoveredData = {
+              x: x + width / 2,
+              y: yScale(d.value),
+              label: d.label,
+              value: d.value
+            }
+          }
+        })
+
+        if (!hoveredData) {
+          crosshairGroup.style('display', 'none')
+          tooltip.style('display', 'none')
+          return
+        }
+
+        // Update crosshair position
+        verticalLine.attr('x1', hoveredData.x).attr('x2', hoveredData.x)
+        horizontalLine.attr('y1', mouseY).attr('y2', mouseY)
+
+        // Highlight the hovered bar
+        g.selectAll('.bar')
+          .attr('opacity', d => d === hoveredBar ? 0.8 : 0.5)
+
+        // Update tooltip content
+        const tooltipContent = [
+          `항목: ${hoveredData.label}`,
+          `값: ${hoveredData.value.toLocaleString()}`
+        ]
+
+        // Clear and add new text
+        tooltipText.selectAll('*').remove()
+        const textLines = tooltipText.selectAll('tspan')
+          .data(tooltipContent)
+          .enter()
+          .append('tspan')
+          .attr('x', 0)
+          .attr('dy', (d, i) => i === 0 ? 0 : '1.2em')
+          .text(d => d)
+
+        // Calculate tooltip dimensions
+        const padding = 8
+        const lineHeight = 14
+        const maxTextWidth = Math.max(...tooltipContent.map(text => text.length * 6))
+        const tooltipWidth = maxTextWidth + padding * 2
+        const tooltipHeight = tooltipContent.length * lineHeight + padding * 2
+
+        // Position tooltip
+        let tooltipX = hoveredData.x + 10
+        let tooltipY = hoveredData.y - tooltipHeight / 2
+
+        if (tooltipX + tooltipWidth > innerWidth) {
+          tooltipX = hoveredData.x - tooltipWidth - 10
+        }
+
+        if (tooltipY < 0) {
+          tooltipY = 0
+        } else if (tooltipY + tooltipHeight > innerHeight) {
+          tooltipY = innerHeight - tooltipHeight
+        }
+
+        // Update tooltip background
+        tooltipBg
+          .attr('x', -padding / 2)
+          .attr('y', -padding - 2)
+          .attr('width', tooltipWidth)
+          .attr('height', tooltipHeight)
+
+        // Update tooltip position
+        tooltip.attr('transform', `translate(${tooltipX}, ${tooltipY + padding})`)
+        tooltipText.attr('x', padding / 2).attr('y', padding)
+
+        crosshairGroup.style('display', 'block')
+        tooltip.style('display', 'block')
+      })
+      .on('mouseout', function() {
+        // Reset bar opacity
+        g.selectAll('.bar').attr('opacity', 1)
+        crosshairGroup.style('display', 'none')
+        tooltip.style('display', 'none')
+      })
   }, [data, width, height, color])
 
   return (

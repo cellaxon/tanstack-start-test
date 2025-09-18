@@ -120,6 +120,119 @@ export function SimpleLineChart({
         .text(d => d);
     }
 
+    // Add crosshair and tooltip
+    const crosshairGroup = g.append('g')
+      .style('display', 'none');
+
+    // Vertical line
+    const verticalLine = crosshairGroup.append('line')
+      .attr('y1', 0)
+      .attr('y2', innerHeight)
+      .attr('stroke', '#999')
+      .attr('stroke-width', 1)
+      .attr('stroke-dasharray', '3,3')
+      .style('pointer-events', 'none');
+
+    // Horizontal line
+    const horizontalLine = crosshairGroup.append('line')
+      .attr('x1', 0)
+      .attr('x2', innerWidth)
+      .attr('stroke', '#999')
+      .attr('stroke-width', 1)
+      .attr('stroke-dasharray', '3,3')
+      .style('pointer-events', 'none');
+
+    // Tooltip background
+    const tooltipBg = crosshairGroup.append('rect')
+      .attr('fill', 'rgba(0, 0, 0, 0.8)')
+      .attr('rx', 4)
+      .attr('ry', 4);
+
+    // Tooltip text group
+    const tooltipTextGroup = crosshairGroup.append('g');
+
+    // Create overlay for mouse events
+    const overlay = g.append('rect')
+      .attr('width', innerWidth)
+      .attr('height', innerHeight)
+      .attr('fill', 'none')
+      .attr('pointer-events', 'all')
+      .on('mousemove', function(event) {
+        const [mouseX, mouseY] = d3.pointer(event);
+
+        // Find closest data point
+        const xPositions = data.map(d => xScale(d.label) || 0);
+        const closestIndex = xPositions.reduce((prev, curr, index) => {
+          return Math.abs(curr - mouseX) < Math.abs(xPositions[prev] - mouseX) ? index : prev;
+        }, 0);
+
+        const closestData = data[closestIndex];
+        const xPos = xScale(closestData.label) || 0;
+
+        // Update crosshair position
+        verticalLine.attr('x1', xPos).attr('x2', xPos);
+        horizontalLine.attr('y1', mouseY).attr('y2', mouseY);
+
+        // Prepare tooltip text
+        const tooltipTexts = [
+          closestData.label,
+          `${label}: ${closestData.value.toFixed(2)}`
+        ];
+
+        if (label2 && closestData.value2 !== undefined) {
+          tooltipTexts.push(`${label2}: ${closestData.value2.toFixed(2)}`);
+        }
+
+        // Clear previous text
+        tooltipTextGroup.selectAll('*').remove();
+
+        // Add tooltip text
+        const textElements = tooltipTextGroup.selectAll('text')
+          .data(tooltipTexts)
+          .enter()
+          .append('text')
+          .attr('fill', 'white')
+          .attr('font-size', '12px')
+          .attr('x', 0)
+          .attr('y', (d, i) => i * 16)
+          .text(d => d);
+
+        // Calculate tooltip dimensions
+        const padding = 8;
+        const maxTextWidth = Math.max(...tooltipTexts.map(text => text.length * 6));
+        const tooltipWidth = maxTextWidth + padding * 2;
+        const tooltipHeight = tooltipTexts.length * 16 + padding;
+
+        // Position tooltip (avoid edge overflow)
+        let tooltipX = xPos + 10;
+        let tooltipY = mouseY - tooltipHeight / 2;
+
+        if (tooltipX + tooltipWidth > innerWidth) {
+          tooltipX = xPos - tooltipWidth - 10;
+        }
+
+        if (tooltipY < 0) {
+          tooltipY = 0;
+        } else if (tooltipY + tooltipHeight > innerHeight) {
+          tooltipY = innerHeight - tooltipHeight;
+        }
+
+        // Update tooltip background
+        tooltipBg
+          .attr('x', tooltipX - padding / 2)
+          .attr('y', tooltipY - padding / 2)
+          .attr('width', tooltipWidth)
+          .attr('height', tooltipHeight);
+
+        // Update tooltip text position
+        tooltipTextGroup.attr('transform', `translate(${tooltipX + padding / 2}, ${tooltipY + padding / 2 + 10})`);
+
+        crosshairGroup.style('display', 'block');
+      })
+      .on('mouseout', function() {
+        crosshairGroup.style('display', 'none');
+      });
+
   }, [data, color, color2, height, label, label2, yMax]);
 
   return <div ref={containerRef} style={{ width: '100%', height }} />;
