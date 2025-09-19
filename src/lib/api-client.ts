@@ -36,8 +36,8 @@ class ApiClient {
         if (newTokens) {
           accessToken = newTokens.access_token;
         } else {
-          AuthService.logout();
-          throw new Error('Authentication failed');
+          // Don't logout immediately, let the 401 handler deal with it
+          accessToken = null;
         }
       }
 
@@ -66,8 +66,11 @@ class ApiClient {
 
         return retryResponse.json();
       } else {
-        AuthService.logout();
-        throw new Error('Authentication failed');
+        // Only logout for certain endpoints, not for traces
+        if (!endpoint.includes('/traces') && !endpoint.includes('/dashboard')) {
+          AuthService.logout();
+        }
+        throw new Error('Authentication required');
       }
     }
 

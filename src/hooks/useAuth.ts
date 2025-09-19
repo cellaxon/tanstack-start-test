@@ -34,6 +34,10 @@ export function useAuthMutation() {
       return response;
     },
     onSuccess: (data) => {
+      // Save user info to localStorage for DashboardLayout
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
       queryClient.setQueryData(['user'], data.user);
       queryClient.invalidateQueries({ queryKey: ['user'] });
     },

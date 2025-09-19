@@ -13,7 +13,12 @@
       "Bash(cmd /c:*)",
       "Bash(pnpm run:*)",
       "Bash(tasklist)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run dev:*)",
+      "Bash(python:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

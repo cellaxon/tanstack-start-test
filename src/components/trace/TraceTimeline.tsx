@@ -255,13 +255,286 @@ export function TraceTimeline({
   };
 
   const renderWaterfallChart = (g: d3.Selection<SVGGElement, unknown, null, undefined>, traceData: TraceData, dim: typeof dimensions) => {
-    // Waterfall implementation similar to gantt but with network timing visualization
-    renderGanttChart(g, traceData, dim); // Simplified for demo
+    const { spans, startTime, duration } = traceData;
+
+    // Sort spans by start time for waterfall effect
+    const sortedSpans = [...spans].sort((a, b) => a.startTime - b.startTime);
+
+    // Create scales
+    const xScale = d3.scaleLinear()
+      .domain([0, duration])
+      .range([0, dim.width]);
+
+    const yScale = d3.scaleBand()
+      .domain(sortedSpans.map((_, i) => i.toString()))
+      .range([0, dim.height])
+      .padding(0.2);
+
+    // Add X axis
+    g.append('g')
+      .attr('class', 'x-axis')
+      .attr('transform', `translate(0,${dim.height})`)
+      .call(d3.axisBottom(xScale)
+        .tickFormat(d => `${d}ms`)
+        .ticks(10));
+
+    // Add grid lines
+    g.append('g')
+      .attr('class', 'grid')
+      .attr('opacity', 0.1)
+      .call(d3.axisLeft(yScale)
+        .tickSize(-dim.width)
+        .tickFormat(() => ''));
+
+    // Create tooltip
+    const tooltip = d3.select('body').append('div')
+      .attr('class', 'trace-tooltip')
+      .style('opacity', 0)
+      .style('position', 'absolute')
+      .style('background', 'rgba(0, 0, 0, 0.9)')
+      .style('color', 'white')
+      .style('padding', '10px')
+      .style('border-radius', '4px')
+      .style('font-size', '12px')
+      .style('pointer-events', 'none');
+
+    // Add waterfall bars
+    const barGroups = g.selectAll('.waterfall-bar')
+      .data(sortedSpans)
+      .enter()
+      .append('g')
+      .attr('class', 'waterfall-bar');
+
+    // Draw waiting time (lighter color)
+    barGroups.append('rect')
+      .attr('x', d => {
+        const parent = spans.find(s => s.spanId === d.parentSpanId);
+        return parent ? xScale(parent.startTime - startTime) : 0;
+      })
+      .attr('y', (_, i) => yScale(i.toString()) || 0)
+      .attr('width', d => {
+        const parent = spans.find(s => s.spanId === d.parentSpanId);
+        const waitStart = parent ? parent.startTime : startTime;
+        return xScale(d.startTime - waitStart);
+      })
+      .attr('height', yScale.bandwidth())
+      .attr('fill', '#E2E8F0')
+      .attr('opacity', 0.5);
+
+    // Draw active time (service color)
+    barGroups.append('rect')
+      .attr('x', d => xScale(d.startTime - startTime))
+      .attr('y', (_, i) => yScale(i.toString()) || 0)
+      .attr('width', d => xScale(d.duration))
+      .attr('height', yScale.bandwidth())
+      .attr('fill', d => SERVICE_COLORS[d.serviceName] || '#94A3B8')
+      .attr('opacity', 0.9)
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 1)
+      .attr('rx', 2)
+      .style('cursor', 'pointer')
+      .on('mouseover', function(event, d) {
+        d3.select(this).attr('opacity', 1);
+
+        tooltip.transition()
+          .duration(200)
+          .style('opacity', .9);
+
+        tooltip.html(`
+          <strong>${d.operationName}</strong><br/>
+          Service: ${d.serviceName}<br/>
+          Start: ${(d.startTime - startTime)}ms<br/>
+          Duration: ${d.duration}ms<br/>
+          End: ${(d.startTime - startTime + d.duration)}ms<br/>
+          Status: ${d.status}
+        `)
+          .style('left', (event.pageX + 10) + 'px')
+          .style('top', (event.pageY - 28) + 'px');
+      })
+      .on('mouseout', function() {
+        d3.select(this).attr('opacity', 0.9);
+        tooltip.transition()
+          .duration(500)
+          .style('opacity', 0);
+      })
+      .on('click', (_, d) => {
+        setSelectedSpan(d);
+      });
+
+    // Add service and operation labels
+    barGroups.append('text')
+      .attr('x', -10)
+      .attr('y', (_, i) => (yScale(i.toString()) || 0) + yScale.bandwidth() / 2)
+      .attr('text-anchor', 'end')
+      .attr('dy', '0.35em')
+      .style('font-size', '11px')
+      .text(d => `${d.serviceName} - ${d.operationName}`.substring(0, 30));
+
+    // Add duration labels
+    barGroups.append('text')
+      .attr('x', d => xScale(d.startTime - startTime + d.duration) + 5)
+      .attr('y', (_, i) => (yScale(i.toString()) || 0) + yScale.bandwidth() / 2)
+      .attr('dy', '0.35em')
+      .style('font-size', '10px')
+      .style('fill', '#64748B')
+      .text(d => `${d.duration}ms`);
+
+    return () => {
+      tooltip.remove();
+    };
   };
 
   const renderFlameGraph = (g: d3.Selection<SVGGElement, unknown, null, undefined>, traceData: TraceData, dim: typeof dimensions) => {
-    // Flame graph implementation
-    renderGanttChart(g, traceData, dim); // Simplified for demo
+    const { spans, startTime } = traceData;
+
+    // Build hierarchy for flame graph
+    const root: any = {
+      name: 'root',
+      value: 0,
+      children: []
+    };
+
+    // Create a map for quick lookup
+    const spanMap = new Map<string, any>();
+    spans.forEach(span => {
+      spanMap.set(span.spanId, {
+        name: `${span.serviceName}: ${span.operationName}`,
+        value: span.duration,
+        data: span,
+        children: []
+      });
+    });
+
+    // Build tree structure
+    spans.forEach(span => {
+      const node = spanMap.get(span.spanId);
+      if (span.parentSpanId && spanMap.has(span.parentSpanId)) {
+        spanMap.get(span.parentSpanId)!.children.push(node);
+      } else {
+        root.children.push(node);
+      }
+    });
+
+    // Calculate positions
+    const partition = d3.partition()
+      .size([dim.width, dim.height])
+      .padding(1);
+
+    const hierarchy = d3.hierarchy(root)
+      .sum(d => d.value || 0)
+      .sort((a, b) => (b.value || 0) - (a.value || 0));
+
+    const partitionRoot = partition(hierarchy);
+
+    // Color scale
+    const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+    // Create tooltip
+    const tooltip = d3.select('body').append('div')
+      .attr('class', 'trace-tooltip')
+      .style('opacity', 0)
+      .style('position', 'absolute')
+      .style('background', 'rgba(0, 0, 0, 0.9)')
+      .style('color', 'white')
+      .style('padding', '10px')
+      .style('border-radius', '4px')
+      .style('font-size', '12px')
+      .style('pointer-events', 'none');
+
+    // Draw flame graph
+    const cell = g.selectAll('.flame-cell')
+      .data(partitionRoot.descendants().filter(d => d.depth > 0))
+      .enter()
+      .append('g')
+      .attr('class', 'flame-cell');
+
+    cell.append('rect')
+      .attr('x', d => d.x0)
+      .attr('y', d => d.y0)
+      .attr('width', d => d.x1 - d.x0)
+      .attr('height', d => d.y1 - d.y0)
+      .attr('fill', d => {
+        if (d.data?.data?.serviceName) {
+          return SERVICE_COLORS[d.data.data.serviceName] || color(d.data.name);
+        }
+        return color(d.data.name);
+      })
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 1)
+      .style('cursor', 'pointer')
+      .on('mouseover', function(event, d) {
+        d3.select(this).attr('opacity', 0.8);
+
+        tooltip.transition()
+          .duration(200)
+          .style('opacity', .9);
+
+        const spanData = d.data?.data;
+        if (spanData) {
+          tooltip.html(`
+            <strong>${spanData.operationName}</strong><br/>
+            Service: ${spanData.serviceName}<br/>
+            Duration: ${spanData.duration}ms<br/>
+            Status: ${spanData.status}<br/>
+            Depth: ${d.depth}
+          `);
+        } else {
+          tooltip.html(`
+            <strong>${d.data.name}</strong><br/>
+            Duration: ${d.value}ms<br/>
+            Depth: ${d.depth}
+          `);
+        }
+
+        tooltip
+          .style('left', (event.pageX + 10) + 'px')
+          .style('top', (event.pageY - 28) + 'px');
+      })
+      .on('mouseout', function() {
+        d3.select(this).attr('opacity', 1);
+        tooltip.transition()
+          .duration(500)
+          .style('opacity', 0);
+      })
+      .on('click', (_, d) => {
+        if (d.data?.data) {
+          setSelectedSpan(d.data.data);
+        }
+      });
+
+    // Add text labels for cells that are wide enough
+    cell.append('text')
+      .attr('x', d => (d.x0 + d.x1) / 2)
+      .attr('y', d => (d.y0 + d.y1) / 2)
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.35em')
+      .style('font-size', '10px')
+      .style('fill', 'white')
+      .style('pointer-events', 'none')
+      .text(d => {
+        const width = d.x1 - d.x0;
+        if (width > 50) {
+          const name = d.data?.data?.operationName || d.data.name;
+          return name.length > 20 ? name.substring(0, 20) + '...' : name;
+        }
+        return '';
+      });
+
+    // Add axis
+    const xScale = d3.scaleLinear()
+      .domain([0, traceData.duration])
+      .range([0, dim.width]);
+
+    g.append('g')
+      .attr('class', 'x-axis')
+      .attr('transform', `translate(0,${dim.height})`)
+      .call(d3.axisBottom(xScale)
+        .tickFormat(d => `${d}ms`)
+        .ticks(10));
+
+    return () => {
+      tooltip.remove();
+    };
   };
 
   const handleZoomIn = () => {
