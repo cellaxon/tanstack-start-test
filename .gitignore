@@ -12,3 +12,6 @@ count.txt
 .vinxi
 todos.json
 *.db
+
+# Generated files
+src/routeTree.gen.ts
