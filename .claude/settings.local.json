@@ -11,7 +11,9 @@
       "Bash(pnpm run dev:*)",
       "Bash(taskkill:*)",
       "Bash(cmd /c:*)",
-      "Bash(pnpm run:*)"
+      "Bash(pnpm run:*)",
+      "Bash(tasklist)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

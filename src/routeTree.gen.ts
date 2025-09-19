@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DashboardUsageRouteImport } from './routes/dashboard/usage'
 import { Route as DashboardTrafficRouteImport } from './routes/dashboard/traffic'
+import { Route as DashboardTracesRouteImport } from './routes/dashboard/traces'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
 import { Route as DashboardSecurityRouteImport } from './routes/dashboard/security'
 import { Route as DashboardRateLimitingRouteImport } from './routes/dashboard/rate-limiting'
@@ -22,6 +23,8 @@ import { Route as DashboardPerformanceRouteImport } from './routes/dashboard/per
 import { Route as DashboardErrorsRouteImport } from './routes/dashboard/errors'
 import { Route as DashboardClientsRouteImport } from './routes/dashboard/clients'
 import { Route as DashboardBillingRouteImport } from './routes/dashboard/billing'
+import { Route as DashboardApiDemoRouteImport } from './routes/dashboard/api-demo'
+import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -51,6 +54,11 @@ const DashboardUsageRoute = DashboardUsageRouteImport.update({
 const DashboardTrafficRoute = DashboardTrafficRouteImport.update({
   id: '/traffic',
   path: '/traffic',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardTracesRoute = DashboardTracesRouteImport.update({
+  id: '/traces',
+  path: '/traces',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
@@ -88,11 +96,23 @@ const DashboardBillingRoute = DashboardBillingRouteImport.update({
   path: '/billing',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardApiDemoRoute = DashboardApiDemoRouteImport.update({
+  id: '/api-demo',
+  path: '/api-demo',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/dashboard/api-demo': typeof DashboardApiDemoRoute
   '/dashboard/billing': typeof DashboardBillingRoute
   '/dashboard/clients': typeof DashboardClientsRoute
   '/dashboard/errors': typeof DashboardErrorsRoute
@@ -100,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/rate-limiting': typeof DashboardRateLimitingRoute
   '/dashboard/security': typeof DashboardSecurityRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/traces': typeof DashboardTracesRoute
   '/dashboard/traffic': typeof DashboardTrafficRoute
   '/dashboard/usage': typeof DashboardUsageRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -107,6 +128,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/dashboard/api-demo': typeof DashboardApiDemoRoute
   '/dashboard/billing': typeof DashboardBillingRoute
   '/dashboard/clients': typeof DashboardClientsRoute
   '/dashboard/errors': typeof DashboardErrorsRoute
@@ -114,6 +137,7 @@ export interface FileRoutesByTo {
   '/dashboard/rate-limiting': typeof DashboardRateLimitingRoute
   '/dashboard/security': typeof DashboardSecurityRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/traces': typeof DashboardTracesRoute
   '/dashboard/traffic': typeof DashboardTrafficRoute
   '/dashboard/usage': typeof DashboardUsageRoute
   '/dashboard': typeof DashboardIndexRoute
@@ -123,6 +147,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/dashboard/api-demo': typeof DashboardApiDemoRoute
   '/dashboard/billing': typeof DashboardBillingRoute
   '/dashboard/clients': typeof DashboardClientsRoute
   '/dashboard/errors': typeof DashboardErrorsRoute
@@ -130,6 +156,7 @@ export interface FileRoutesById {
   '/dashboard/rate-limiting': typeof DashboardRateLimitingRoute
   '/dashboard/security': typeof DashboardSecurityRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/traces': typeof DashboardTracesRoute
   '/dashboard/traffic': typeof DashboardTrafficRoute
   '/dashboard/usage': typeof DashboardUsageRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -140,6 +167,8 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/auth/callback'
+    | '/dashboard/api-demo'
     | '/dashboard/billing'
     | '/dashboard/clients'
     | '/dashboard/errors'
@@ -147,6 +176,7 @@ export interface FileRouteTypes {
     | '/dashboard/rate-limiting'
     | '/dashboard/security'
     | '/dashboard/settings'
+    | '/dashboard/traces'
     | '/dashboard/traffic'
     | '/dashboard/usage'
     | '/dashboard/'
@@ -154,6 +184,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/auth/callback'
+    | '/dashboard/api-demo'
     | '/dashboard/billing'
     | '/dashboard/clients'
     | '/dashboard/errors'
@@ -161,6 +193,7 @@ export interface FileRouteTypes {
     | '/dashboard/rate-limiting'
     | '/dashboard/security'
     | '/dashboard/settings'
+    | '/dashboard/traces'
     | '/dashboard/traffic'
     | '/dashboard/usage'
     | '/dashboard'
@@ -169,6 +202,8 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/auth/callback'
+    | '/dashboard/api-demo'
     | '/dashboard/billing'
     | '/dashboard/clients'
     | '/dashboard/errors'
@@ -176,6 +211,7 @@ export interface FileRouteTypes {
     | '/dashboard/rate-limiting'
     | '/dashboard/security'
     | '/dashboard/settings'
+    | '/dashboard/traces'
     | '/dashboard/traffic'
     | '/dashboard/usage'
     | '/dashboard/'
@@ -185,6 +221,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   LoginRoute: typeof LoginRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -229,6 +266,13 @@ declare module '@tanstack/react-router' {
       path: '/traffic'
       fullPath: '/dashboard/traffic'
       preLoaderRoute: typeof DashboardTrafficRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/traces': {
+      id: '/dashboard/traces'
+      path: '/traces'
+      fullPath: '/dashboard/traces'
+      preLoaderRoute: typeof DashboardTracesRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/settings': {
@@ -280,10 +324,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardBillingRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/api-demo': {
+      id: '/dashboard/api-demo'
+      path: '/api-demo'
+      fullPath: '/dashboard/api-demo'
+      preLoaderRoute: typeof DashboardApiDemoRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface DashboardRouteChildren {
+  DashboardApiDemoRoute: typeof DashboardApiDemoRoute
   DashboardBillingRoute: typeof DashboardBillingRoute
   DashboardClientsRoute: typeof DashboardClientsRoute
   DashboardErrorsRoute: typeof DashboardErrorsRoute
@@ -291,12 +350,14 @@ interface DashboardRouteChildren {
   DashboardRateLimitingRoute: typeof DashboardRateLimitingRoute
   DashboardSecurityRoute: typeof DashboardSecurityRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
+  DashboardTracesRoute: typeof DashboardTracesRoute
   DashboardTrafficRoute: typeof DashboardTrafficRoute
   DashboardUsageRoute: typeof DashboardUsageRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardApiDemoRoute: DashboardApiDemoRoute,
   DashboardBillingRoute: DashboardBillingRoute,
   DashboardClientsRoute: DashboardClientsRoute,
   DashboardErrorsRoute: DashboardErrorsRoute,
@@ -304,6 +365,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardRateLimitingRoute: DashboardRateLimitingRoute,
   DashboardSecurityRoute: DashboardSecurityRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
+  DashboardTracesRoute: DashboardTracesRoute,
   DashboardTrafficRoute: DashboardTrafficRoute,
   DashboardUsageRoute: DashboardUsageRoute,
   DashboardIndexRoute: DashboardIndexRoute,
@@ -317,6 +379,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRouteWithChildren,
   LoginRoute: LoginRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

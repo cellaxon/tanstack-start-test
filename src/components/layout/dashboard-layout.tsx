@@ -13,7 +13,8 @@ import {
   Home,
   AlertCircle,
   Users,
-  DollarSign
+  DollarSign,
+  GitBranch
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -35,6 +36,12 @@ const menuItems = [
     icon: Activity,
     href: '/dashboard/performance',
     description: 'Response time and latency metrics'
+  },
+  {
+    title: 'Distributed Tracing',
+    icon: GitBranch,
+    href: '/dashboard/traces',
+    description: 'Trace requests across services'
   },
   {
     title: 'Usage Analytics',
