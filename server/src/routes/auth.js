@@ -4,6 +4,30 @@ import { findUserByCredentials, findUserById, findOrCreateOAuthUser } from '../d
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: User login
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Invalid credentials
+ */
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
@@ -29,6 +53,45 @@ router.post('/login', async (req, res) => {
   });
 });
 
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refresh_token
+ *             properties:
+ *               refresh_token:
+ *                 type: string
+ *                 description: JWT refresh token
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 access_token:
+ *                   type: string
+ *                 refresh_token:
+ *                   type: string
+ *                 expires_in:
+ *                   type: number
+ *                 token_type:
+ *                   type: string
+ *       400:
+ *         description: Refresh token required
+ *       401:
+ *         description: Invalid refresh token
+ */
 router.post('/refresh', async (req, res) => {
   const { refresh_token } = req.body;
 
@@ -45,6 +108,37 @@ router.post('/refresh', async (req, res) => {
   res.json(tokens);
 });
 
+/**
+ * @swagger
+ * /auth/oauth/callback:
+ *   post:
+ *     summary: OAuth callback
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - provider
+ *               - code
+ *             properties:
+ *               provider:
+ *                 type: string
+ *                 enum: [google, github, microsoft]
+ *               code:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: OAuth authentication successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       400:
+ *         description: Invalid provider or missing parameters
+ */
 router.post('/oauth/callback', async (req, res) => {
   const { provider, code } = req.body;
 
@@ -93,6 +187,26 @@ router.post('/oauth/callback', async (req, res) => {
   });
 });
 
+/**
+ * @swagger
+ * /auth/me:
+ *   get:
+ *     summary: Get current user
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ */
 router.get('/me', authenticateToken, async (req, res) => {
   const user = findUserById(req.user.userId);
 
@@ -108,7 +222,20 @@ router.get('/me', authenticateToken, async (req, res) => {
   });
 });
 
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: User logout
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ */
 router.post('/logout', authenticateToken, (req, res) => {
+  // In a real app, you might want to blacklist the token
   res.json({ message: 'Logged out successfully' });
 });
 

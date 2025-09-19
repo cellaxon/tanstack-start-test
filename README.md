@@ -2,6 +2,72 @@
 
 A modern, responsive dashboard for monitoring and managing API gateway traffic, built with React, TypeScript, and TanStack Router.
 
+## 🚀 Recent Updates
+
+### New Features & Improvements
+
+#### 🎨 UI/UX Enhancements
+- **Network Path Visualization**: Interactive network topology view using React Flow
+  - Real-time traffic flow animation
+  - Node status monitoring with health indicators
+  - Auto-layout functionality for optimal graph arrangement
+  - Custom styled nodes for different service types
+
+- **Distributed Tracing**: Advanced trace analysis with multiple view modes
+  - **Gantt Chart View**: Timeline visualization of distributed traces
+  - **Waterfall View**: Sequential execution flow with wait time indicators
+  - **Flame Graph View**: Hierarchical performance visualization
+  - Zoom controls and export functionality
+  - Real-time span details on hover/click
+
+#### 📊 Data Management
+- **TanStack Query Integration**: Optimized data fetching for traces
+  - Automatic caching with 5-minute retention
+  - Background refetching every minute
+  - Prefetching on hover for instant loading
+  - Smart retry logic with exponential backoff
+  - Loading, error, and success state management
+
+#### 🔐 Authentication Improvements
+- **Enhanced Auth Flow**: Robust authentication handling
+  - Automatic token refresh before expiration
+  - Persistent sessions with localStorage
+  - Mock authentication for development (admin/admin123)
+  - Graceful error handling without forced redirects
+
+#### 📚 API Documentation
+- **Comprehensive Documentation**: Two documentation formats
+  - **Swagger UI**: Interactive API testing at `/api-docs`
+  - **Markdown Docs**: Detailed documentation at `/docs`
+  - OpenAPI 3.0 specification
+  - Request/response examples
+  - Authentication guide
+
+#### 🎲 Mock Data Enhancements
+- **Dynamic Trace Generation**: Realistic distributed trace simulation
+  - Random service topology generation (5-15 spans per trace)
+  - 10 different service types with appropriate operations
+  - Weighted status distribution (85% success, 10% warning, 5% error)
+  - Service-specific metadata (database queries, cache hits, payment info)
+  - Hierarchical parent-child relationships
+
+### Technical Improvements
+
+#### Performance
+- Optimized React Flow rendering with memoization
+- Reduced unnecessary re-renders in trace timeline
+- Efficient D3.js chart updates
+
+#### Code Quality
+- TypeScript type safety improvements
+- Removed unused imports and variables
+- Better error boundary implementation
+
+#### Developer Experience
+- Hot module replacement (HMR) for all components
+- Better error messages and debugging info
+- Development mode query state indicators
+
 ## Features
 
 - **Real-time Monitoring**: Live system metrics (CPU, memory, network)
@@ -16,8 +82,10 @@ A modern, responsive dashboard for monitoring and managing API gateway traffic, 
 - **Frontend**: React 19, TypeScript, TanStack Router, TanStack Query
 - **Styling**: Tailwind CSS v4, shadcn/ui components
 - **Charts**: D3.js with custom React components
+- **Visualizations**: React Flow for network topology
 - **Build Tool**: Vite
 - **Mock Server**: Express.js with SQLite
+- **API Documentation**: Swagger UI + OpenAPI 3.0
 - **Code Quality**: Biome for linting and formatting
 
 ## Project Structure
@@ -25,15 +93,24 @@ A modern, responsive dashboard for monitoring and managing API gateway traffic, 
 ```
 ├── src/
 │   ├── components/       # Reusable UI components
+│   │   ├── trace/       # Distributed tracing components
+│   │   ├── charts/      # D3.js chart components
+│   │   └── ui/          # shadcn/ui components
 │   ├── hooks/           # Custom React hooks
+│   │   ├── useTraces.ts # TanStack Query hooks for traces
+│   │   └── useAuth.ts   # Authentication hooks
 │   ├── lib/             # Utilities and configurations
+│   │   ├── api-client.ts # API client with auth
+│   │   └── auth.ts      # Authentication service
 │   ├── routes/          # TanStack Router pages
 │   └── app/             # Application-specific components
 ├── server/              # Mock API server
 │   ├── src/
 │   │   ├── routes/      # API endpoints
 │   │   ├── services/    # Business logic
+│   │   ├── swagger.js   # API documentation config
 │   │   └── db/          # Database operations
+│   ├── API_DOCUMENTATION.md # Detailed API docs
 │   └── package.json
 ├── scripts/             # Build and utility scripts
 └── dist-ssg/           # Static build output
@@ -82,6 +159,8 @@ pnpm run dev:all
 This starts:
 - Frontend dev server on http://localhost:3000
 - Mock API server on http://localhost:4001
+- Swagger UI on http://localhost:4001/api-docs
+- Markdown docs on http://localhost:4001/docs
 
 ### Run separately:
 
@@ -94,6 +173,28 @@ Mock server only:
 ```bash
 pnpm run dev:server
 ```
+
+## Authentication
+
+### Available Users
+- **Demo User**: username: `demo`, password: `demo123`
+- **Admin User**: username: `admin`, password: `admin123`
+
+## API Documentation
+
+The mock server provides comprehensive API documentation:
+
+### Interactive Documentation (Swagger UI)
+- **URL**: http://localhost:4001/api-docs
+- Test endpoints directly from the browser
+- OpenAPI 3.0 specification
+- Try it out functionality
+
+### Markdown Documentation
+- **URL**: http://localhost:4001/docs
+- Detailed endpoint descriptions
+- Request/response examples
+- Authentication guide
 
 ## Building
 
@@ -117,10 +218,47 @@ Build and run the static site with mock server:
 pnpm run build:serve
 ```
 
-This:
-1. Builds the static site
-2. Serves it on http://localhost:3000
-3. Runs mock server on http://localhost:4001
+## API Endpoints
+
+### Public Endpoints
+- `GET /health` - Health check
+- `GET /api/metrics/current` - Current system metrics
+- `GET /api/metrics/history` - Historical metrics data
+- `GET /api/dashboard/*` - Dashboard statistics
+- `GET /api-docs` - Swagger UI documentation
+- `GET /docs` - Markdown documentation
+
+### Protected Endpoints (require authentication)
+- `GET /api/traces` - List distributed traces
+- `GET /api/traces/:id` - Get trace details
+- `GET /api/todos` - Todo management
+- `GET /api/posts` - Blog posts
+- `GET /api/users` - User management
+
+### Authentication
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `POST /api/auth/refresh` - Refresh access token
+
+## Key Components
+
+### Distributed Tracing (`/dashboard/traces`)
+- Real-time trace monitoring
+- Multiple visualization modes
+- Service dependency mapping
+- Error tracking and analysis
+
+### Network Path Visualization (`/dashboard/network-path`)
+- Interactive network topology
+- Real-time traffic flow
+- Node health monitoring
+- Connection metrics
+
+### System Metrics
+- CPU, Memory, Disk usage
+- Network I/O monitoring
+- Request rate tracking
+- Error rate analysis
 
 ## Testing
 
@@ -168,89 +306,6 @@ pnpm run check
 | `pnpm run check` | Run all Biome checks |
 | `pnpm run server:install` | Install mock server dependencies |
 
-## API Endpoints
-
-The mock server provides the following endpoints:
-
-### Public Endpoints
-- `GET /health` - Health check
-- `GET /api/metrics/current` - Current system metrics
-- `GET /api/metrics/history` - Historical metrics data
-- `GET /api/dashboard/*` - Dashboard statistics
-
-### Protected Endpoints (require authentication)
-- `GET /api/user` - User information
-- `GET /api/billing` - Billing data
-- `GET /api/security` - Security events
-- `GET /api/settings` - User settings
-
-### Authentication
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
-- `POST /api/auth/refresh` - Refresh access token
-
-## Features in Detail
-
-### System Monitoring
-- Real-time CPU, memory, and network usage
-- Historical data with 15-minute retention
-- Auto-refresh every second
-- Interactive line charts with tooltips
-
-### Dashboard Pages
-- **Overview**: Key metrics and quick stats
-- **Traffic**: Request volume and patterns
-- **Performance**: Response times and latency
-- **Errors**: Error tracking and analysis
-- **Security**: Security events and threats
-- **Rate Limiting**: API rate limit monitoring
-- **Billing**: Usage and billing information
-- **Clients**: Client application management
-- **Settings**: User preferences
-
-### Mock Server Features
-- SQLite database for persistent storage
-- Simulated real-time metrics
-- JWT-based authentication
-- CORS enabled for local development
-- Proxy support for external APIs
-
-## SSG Output Structure
-
-After building, the static site structure:
-
-```
-dist-ssg/
-├── index.html                    # Home page
-├── login/
-│   └── index.html               # Login page
-├── dashboard/
-│   ├── index.html               # Dashboard overview
-│   ├── billing/
-│   │   └── index.html          # Billing page
-│   ├── clients/
-│   │   └── index.html          # Clients page
-│   ├── errors/
-│   │   └── index.html          # Errors page
-│   ├── performance/
-│   │   └── index.html          # Performance page
-│   ├── rate-limiting/
-│   │   └── index.html          # Rate limiting page
-│   ├── security/
-│   │   └── index.html          # Security page
-│   ├── settings/
-│   │   └── index.html          # Settings page
-│   ├── traffic/
-│   │   └── index.html          # Traffic page
-│   └── usage/
-│       └── index.html          # Usage page
-├── assets/                     # JS/CSS bundles
-├── sitemap.xml                 # SEO sitemap
-├── robots.txt                  # Crawler configuration
-├── 404.html                    # 404 error page
-└── _redirects                  # Netlify redirects
-```
-
 ## Environment Variables
 
 | Variable | Description | Default |
@@ -269,7 +324,7 @@ dist-ssg/
 - Lighthouse Score: 95+ (Performance)
 - First Contentful Paint: < 1.2s
 - Time to Interactive: < 2.5s
-- Bundle size: ~650KB (before gzip)
+- Bundle size: ~750KB (before gzip)
 
 ## Deployment
 
@@ -298,63 +353,24 @@ dist-ssg
 npx gh-pages -d dist-ssg
 ```
 
-### AWS S3 + CloudFront
-Upload the `dist-ssg` folder contents to S3 and configure CloudFront for global CDN distribution.
-
 ## Troubleshooting
 
+### Authentication Issues
+1. Clear localStorage: `localStorage.clear()`
+2. Use demo credentials: username `demo`, password `demo123`
+3. Check token expiration in browser DevTools
+4. Verify mock server is running on port 4001
+
 ### CORS Issues
-If you encounter CORS errors:
-1. Ensure the mock server is running on port 4001
-2. Check that `VITE_API_URL` is set to `http://localhost:4001/api`
+1. Ensure mock server is running on port 4001
+2. Check `VITE_API_URL` environment variable
 3. Verify CORS settings in `server/src/index.js`
-4. For production, configure appropriate CORS origins
 
-### Build Issues
-1. Clear build cache: `rm -rf dist-ssg`
-2. Reinstall dependencies: `rm -rf node_modules && pnpm install`
-3. Check Node.js version (18+ required)
-4. Ensure all environment variables are set
-
-### Mock Server Issues
-1. Check if port 4001 is available: `netstat -an | grep 4001`
-2. Ensure SQLite database is initialized
-3. Check server logs for errors
-4. Try reinstalling server dependencies: `pnpm run server:install`
-
-### Static Build Not Connecting to Mock Server
-1. Rebuild after updating environment variables
-2. Ensure mock server is running before accessing the site
-3. Check browser console for CORS or network errors
-4. Verify API URL in browser network tab
-
-## Using TanStack Features
-
-### Routing
-This project uses file-based routing with TanStack Router. Routes are managed in `src/routes/`.
-
-To add a new route:
-1. Create a new file in `src/routes/`
-2. Use TanStack Router's route creation utilities
-3. The route will be automatically registered
-
-### Data Fetching
-The project uses TanStack Query for server state management:
-
-```tsx
-const { data, isLoading } = useQuery({
-  queryKey: ['metrics'],
-  queryFn: fetchMetrics,
-  refetchInterval: 1000, // Real-time updates
-});
-```
-
-### Adding Shadcn Components
-Add new UI components using:
-
-```bash
-pnpx shadcn@latest add button
-```
+### Trace Data Not Loading
+1. Ensure authentication token is valid
+2. Check browser console for errors
+3. Verify mock server is generating data
+4. Try refreshing the page
 
 ## Contributing
 

@@ -9,6 +9,7 @@ import metricsRoutes from './routes/metrics.js';
 import dashboardRoutes from './routes/dashboard.js';
 import { authenticateToken } from './middleware/auth.js';
 import { startMonitoring } from './services/monitoring.js';
+import { swaggerUi, specs } from './swagger.js';
 
 dotenv.config();
 
@@ -37,6 +38,17 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+// Swagger UI documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Mock Server API Documentation'
+}));
+
+// Serve markdown documentation
+app.get('/docs', (req, res) => {
+  res.sendFile('API_DOCUMENTATION.md', { root: '.' });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/proxy', proxyRoutes);
 app.use('/api/metrics', metricsRoutes); // Public metrics endpoint
@@ -56,6 +68,8 @@ app.listen(PORT, () => {
   console.log(`Mock server running on http://localhost:${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
   console.log(`Metrics API: http://localhost:${PORT}/api/metrics`);
+  console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
+  console.log(`📄 Markdown Docs: http://localhost:${PORT}/docs`);
 
   // Start system monitoring
   startMonitoring();

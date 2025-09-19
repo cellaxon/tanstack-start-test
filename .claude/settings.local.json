@@ -18,7 +18,8 @@
       "Bash(python:*)",
       "Bash(npm run build:*)",
       "Bash(npx tsc:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

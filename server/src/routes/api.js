@@ -28,6 +28,26 @@ let posts = [
   },
 ];
 
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Get all users
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ */
 router.get('/users', (req, res) => {
   const users = getAllUsers().map(u => ({
     id: u.id,
@@ -38,6 +58,53 @@ router.get('/users', (req, res) => {
   res.json(users);
 });
 
+/**
+ * @swagger
+ * /todos:
+ *   get:
+ *     summary: Get todos
+ *     tags: [Todos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Items per page
+ *       - in: query
+ *         name: completed
+ *         schema:
+ *           type: boolean
+ *         description: Filter by completion status
+ *     responses:
+ *       200:
+ *         description: List of todos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Todo'
+ *                 total:
+ *                   type: integer
+ *                 page:
+ *                   type: integer
+ *                 limit:
+ *                   type: integer
+ *       401:
+ *         description: Unauthorized
+ */
 router.get('/todos', (req, res) => {
   const { page = 1, limit = 10, completed } = req.query;
   let filtered = todos;
@@ -193,6 +260,46 @@ router.get('/notifications', (req, res) => {
 });
 
 // Trace data for timeline visualization
+/**
+ * @swagger
+ * /traces:
+ *   get:
+ *     summary: Get list of distributed traces
+ *     tags: [Traces]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Number of traces to return
+ *       - in: query
+ *         name: traceId
+ *         schema:
+ *           type: string
+ *         description: Filter by specific trace ID
+ *     responses:
+ *       200:
+ *         description: List of traces
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 traces:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Trace'
+ *                 total:
+ *                   type: integer
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *       401:
+ *         description: Unauthorized
+ */
 router.get('/traces', (req, res) => {
   const { traceId, limit = 20 } = req.query;
 
@@ -299,6 +406,50 @@ router.get('/traces', (req, res) => {
 });
 
 // Get specific trace details with spans
+/**
+ * @swagger
+ * /traces/{traceId}:
+ *   get:
+ *     summary: Get detailed trace information
+ *     tags: [Traces]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: traceId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The trace ID
+ *     responses:
+ *       200:
+ *         description: Detailed trace with spans
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 traceId:
+ *                   type: string
+ *                 rootSpan:
+ *                   type: object
+ *                 spans:
+ *                   type: array
+ *                 startTime:
+ *                   type: number
+ *                 duration:
+ *                   type: number
+ *                 serviceCount:
+ *                   type: number
+ *                 spanCount:
+ *                   type: number
+ *                 errorCount:
+ *                   type: number
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Trace not found
+ */
 router.get('/traces/:traceId', (req, res) => {
   const { traceId } = req.params;
   const baseTime = Date.now() - Math.floor(Math.random() * 60000); // Random time in last minute
@@ -459,6 +610,44 @@ router.get('/traces/:traceId', (req, res) => {
 });
 
 // Get trace waterfall data for network visualization
+/**
+ * @swagger
+ * /traces/{traceId}/waterfall:
+ *   get:
+ *     summary: Get trace waterfall visualization data
+ *     tags: [Traces]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: traceId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The trace ID
+ *     responses:
+ *       200:
+ *         description: Waterfall visualization data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 traceId:
+ *                   type: string
+ *                 startTime:
+ *                   type: number
+ *                 endTime:
+ *                   type: number
+ *                 duration:
+ *                   type: number
+ *                 services:
+ *                   type: array
+ *                 spans:
+ *                   type: array
+ *       401:
+ *         description: Unauthorized
+ */
 router.get('/traces/:traceId/waterfall', (req, res) => {
   const { traceId } = req.params;
   const baseTime = Date.now() - 10000;

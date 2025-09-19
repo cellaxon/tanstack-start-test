@@ -19,7 +19,20 @@ function generateTimeSeriesData(hours = 24, baseValue = 300, variance = 200) {
   return data;
 }
 
-// Dashboard overview stats
+/**
+ * @swagger
+ * /dashboard/stats:
+ *   get:
+ *     summary: Get dashboard statistics
+ *     tags: [Dashboard]
+ *     responses:
+ *       200:
+ *         description: Dashboard statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/DashboardStats'
+ */
 router.get('/stats', (req, res) => {
   const stats = {
     totalRequests: {
