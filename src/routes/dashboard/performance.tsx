@@ -6,6 +6,7 @@ import { apiPerformanceData } from "@/app/data_api_performance"
 import { userUsageColumns } from "@/app/columns_user_usage"
 import { userUsageData } from "@/app/data_user_usage"
 import { DataTable } from "@/components/DataTable"
+import { NetworkPath } from "@/components/NetworkPath"
 
 export const Route = createFileRoute('/dashboard/performance')({
   component: PerformancePage,
@@ -15,18 +16,10 @@ function PerformancePage() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Performance Metrics</h1>
-      
-      <div className="grid grid-cols-1 gap-4 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Response Time Analysis</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600">Performance metrics will be displayed here.</p>
-          </CardContent>
-        </Card>
-      </div>
 
+      <div className="mb-8">
+        <NetworkPath />
+      </div>
 
       <div className="grid grid-cols-1 gap-6">
         <Card>

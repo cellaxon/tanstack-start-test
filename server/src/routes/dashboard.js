@@ -228,4 +228,65 @@ router.get('/billing', (req, res) => {
   });
 });
 
+// Network path visualization data
+router.get('/network-path', (req, res) => {
+  const nodes = [
+    { id: 'client', label: 'Client App', type: 'client', x: 100, y: 200 },
+    { id: 'cdn', label: 'CDN', type: 'cdn', x: 300, y: 100 },
+    { id: 'loadbalancer', label: 'Load Balancer', type: 'loadbalancer', x: 500, y: 200 },
+    { id: 'api-gateway', label: 'API Gateway', type: 'gateway', x: 700, y: 200 },
+    { id: 'auth-service', label: 'Auth Service', type: 'service', x: 900, y: 100 },
+    { id: 'app-server-1', label: 'App Server 1', type: 'server', x: 900, y: 200 },
+    { id: 'app-server-2', label: 'App Server 2', type: 'server', x: 900, y: 300 },
+    { id: 'cache', label: 'Redis Cache', type: 'cache', x: 1100, y: 100 },
+    { id: 'database', label: 'PostgreSQL', type: 'database', x: 1100, y: 250 },
+    { id: 'monitoring', label: 'Monitoring', type: 'monitoring', x: 700, y: 50 },
+    { id: 'queue', label: 'Message Queue', type: 'queue', x: 1100, y: 350 }
+  ];
+
+  const edges = [
+    { id: 'e1', source: 'client', target: 'cdn', label: '~10ms', animated: true, traffic: Math.random() * 100 },
+    { id: 'e2', source: 'cdn', target: 'loadbalancer', label: '~5ms', animated: true, traffic: Math.random() * 100 },
+    { id: 'e3', source: 'client', target: 'loadbalancer', label: '~15ms', animated: false, traffic: Math.random() * 100 },
+    { id: 'e4', source: 'loadbalancer', target: 'api-gateway', label: '~2ms', animated: true, traffic: Math.random() * 100 },
+    { id: 'e5', source: 'api-gateway', target: 'auth-service', label: '~5ms', animated: Math.random() > 0.5, traffic: Math.random() * 100 },
+    { id: 'e6', source: 'api-gateway', target: 'app-server-1', label: '~3ms', animated: true, traffic: Math.random() * 100 },
+    { id: 'e7', source: 'api-gateway', target: 'app-server-2', label: '~3ms', animated: true, traffic: Math.random() * 100 },
+    { id: 'e8', source: 'app-server-1', target: 'cache', label: '~1ms', animated: Math.random() > 0.3, traffic: Math.random() * 100 },
+    { id: 'e9', source: 'app-server-2', target: 'cache', label: '~1ms', animated: Math.random() > 0.3, traffic: Math.random() * 100 },
+    { id: 'e10', source: 'app-server-1', target: 'database', label: '~10ms', animated: Math.random() > 0.5, traffic: Math.random() * 100 },
+    { id: 'e11', source: 'app-server-2', target: 'database', label: '~10ms', animated: Math.random() > 0.5, traffic: Math.random() * 100 },
+    { id: 'e12', source: 'api-gateway', target: 'monitoring', label: '', animated: false, traffic: Math.random() * 30 },
+    { id: 'e13', source: 'app-server-1', target: 'queue', label: '~2ms', animated: Math.random() > 0.7, traffic: Math.random() * 100 },
+    { id: 'e14', source: 'app-server-2', target: 'queue', label: '~2ms', animated: Math.random() > 0.7, traffic: Math.random() * 100 }
+  ];
+
+  // Simulate some network metrics
+  const metrics = {
+    totalRequests: Math.floor(Math.random() * 10000) + 5000,
+    avgLatency: (Math.random() * 50 + 20).toFixed(2),
+    successRate: (95 + Math.random() * 4).toFixed(2),
+    activeConnections: Math.floor(Math.random() * 500) + 200,
+    bandwidth: {
+      inbound: (Math.random() * 100 + 50).toFixed(2),
+      outbound: (Math.random() * 80 + 30).toFixed(2)
+    },
+    nodeStatus: nodes.reduce((acc, node) => {
+      acc[node.id] = {
+        healthy: Math.random() > 0.1,
+        load: (Math.random() * 100).toFixed(1),
+        connections: Math.floor(Math.random() * 100)
+      };
+      return acc;
+    }, {})
+  };
+
+  res.json({
+    nodes,
+    edges,
+    metrics,
+    timestamp: new Date().toISOString()
+  });
+});
+
 export default router;
