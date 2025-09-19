@@ -15,10 +15,13 @@ import ReactFlow, {
   NodeProps,
   getBezierPath,
   EdgeProps,
+  useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { LayoutGrid, RefreshCw } from 'lucide-react';
 
 interface NetworkNode extends Node {
   data: {
@@ -86,7 +89,7 @@ const CustomNode: React.FC<NodeProps> = ({ data, id }) => {
     >
       <Handle
         type="target"
-        position={Position.Top}
+        position={Position.Left}
         style={{ background: color }}
       />
       <div className="text-center">
@@ -115,7 +118,7 @@ const CustomNode: React.FC<NodeProps> = ({ data, id }) => {
       </div>
       <Handle
         type="source"
-        position={Position.Bottom}
+        position={Position.Right}
         style={{ background: color }}
       />
     </div>
@@ -194,8 +197,9 @@ export function NetworkPath() {
   const [metrics, setMetrics] = useState<NetworkMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAutoLayouting, setIsAutoLayouting] = useState(false);
 
-  const fetchNetworkData = async () => {
+  const fetchNetworkData = useCallback(async (preservePositions = false) => {
     try {
       setLoading(true);
       const response = await fetch('http://localhost:4001/api/dashboard/network-path');
@@ -203,17 +207,37 @@ export function NetworkPath() {
 
       const data = await response.json();
 
-      // Transform nodes
-      const transformedNodes: NetworkNode[] = data.nodes.map((node: any) => ({
-        id: node.id,
-        type: 'custom',
-        position: { x: node.x, y: node.y },
-        data: {
-          label: node.label,
-          type: node.type,
-          status: data.metrics.nodeStatus[node.id]
-        },
-      }));
+      // Transform nodes with position preservation
+      setNodes((currentNodes) => {
+        // Create a map of current node positions
+        const currentPositions = new Map<string, { x: number; y: number }>();
+        if (preservePositions && currentNodes.length > 0) {
+          currentNodes.forEach(node => {
+            currentPositions.set(node.id, node.position);
+          });
+        }
+
+        // Transform nodes
+        const transformedNodes: NetworkNode[] = data.nodes.map((node: any) => {
+          // Use existing position if available and preservePositions is true
+          const position = preservePositions && currentPositions.has(node.id)
+            ? currentPositions.get(node.id)!
+            : { x: node.x, y: node.y };
+
+          return {
+            id: node.id,
+            type: 'custom',
+            position,
+            data: {
+              label: node.label,
+              type: node.type,
+              status: data.metrics.nodeStatus[node.id]
+            },
+          };
+        });
+
+        return transformedNodes;
+      });
 
       // Transform edges
       const transformedEdges: NetworkEdge[] = data.edges.map((edge: any) => ({
@@ -229,7 +253,6 @@ export function NetworkPath() {
         }
       }));
 
-      setNodes(transformedNodes);
       setEdges(transformedEdges);
       setMetrics(data.metrics);
       setError(null);
@@ -238,18 +261,125 @@ export function NetworkPath() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setNodes, setEdges]);
 
   useEffect(() => {
-    fetchNetworkData();
-    const interval = setInterval(fetchNetworkData, 5000); // Refresh every 5 seconds
+    // Initial load without preserving positions
+    fetchNetworkData(false);
+
+    // Set up interval for updates that preserve positions
+    const interval = setInterval(() => {
+      fetchNetworkData(true); // Preserve positions on auto-refresh
+    }, 5000); // Refresh every 5 seconds
+
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchNetworkData]);
 
   const onConnect = useCallback(
     (params: Connection | Edge) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
+
+  // Auto layout function using dagre-like algorithm
+  const autoLayout = useCallback(() => {
+    setIsAutoLayouting(true);
+
+    // Create a map to track node dependencies
+    const nodeMap = new Map<string, NetworkNode>();
+    const inDegree = new Map<string, number>();
+    const outEdges = new Map<string, string[]>();
+
+    // Initialize maps
+    nodes.forEach(node => {
+      nodeMap.set(node.id, node);
+      inDegree.set(node.id, 0);
+      outEdges.set(node.id, []);
+    });
+
+    // Calculate in-degree and out-edges for each node
+    edges.forEach(edge => {
+      inDegree.set(edge.target, (inDegree.get(edge.target) || 0) + 1);
+      const currentOutEdges = outEdges.get(edge.source) || [];
+      currentOutEdges.push(edge.target);
+      outEdges.set(edge.source, currentOutEdges);
+    });
+
+    // Find nodes with no incoming edges (roots)
+    const roots: string[] = [];
+    inDegree.forEach((degree, nodeId) => {
+      if (degree === 0) {
+        roots.push(nodeId);
+      }
+    });
+
+    // Assign layers using BFS
+    const layers = new Map<string, number>();
+    const visited = new Set<string>();
+    const queue: { id: string; layer: number }[] = [];
+
+    // Start with root nodes
+    roots.forEach(root => {
+      queue.push({ id: root, layer: 0 });
+      layers.set(root, 0);
+    });
+
+    // Process queue
+    while (queue.length > 0) {
+      const { id, layer } = queue.shift()!;
+
+      if (visited.has(id)) continue;
+      visited.add(id);
+
+      const children = outEdges.get(id) || [];
+      children.forEach(child => {
+        const currentLayer = layers.get(child) || -1;
+        const newLayer = layer + 1;
+        if (newLayer > currentLayer) {
+          layers.set(child, newLayer);
+        }
+        if (!visited.has(child)) {
+          queue.push({ id: child, layer: newLayer });
+        }
+      });
+    }
+
+    // Group nodes by layer
+    const nodesByLayer = new Map<number, string[]>();
+    let maxLayer = 0;
+    layers.forEach((layer, nodeId) => {
+      maxLayer = Math.max(maxLayer, layer);
+      const currentNodes = nodesByLayer.get(layer) || [];
+      currentNodes.push(nodeId);
+      nodesByLayer.set(layer, currentNodes);
+    });
+
+    // Position nodes
+    const horizontalSpacing = 250;
+    const verticalSpacing = 120;
+    const startX = 100;
+    const startY = 100;
+
+    const updatedNodes = nodes.map(node => {
+      const layer = layers.get(node.id) || 0;
+      const nodesInLayer = nodesByLayer.get(layer) || [];
+      const indexInLayer = nodesInLayer.indexOf(node.id);
+      const layerHeight = nodesInLayer.length * verticalSpacing;
+
+      return {
+        ...node,
+        position: {
+          x: startX + layer * horizontalSpacing,
+          y: startY + indexInLayer * verticalSpacing - layerHeight / 2 + 200
+        }
+      };
+    });
+
+    setNodes(updatedNodes);
+
+    setTimeout(() => {
+      setIsAutoLayouting(false);
+    }, 500);
+  }, [nodes, edges, setNodes]);
 
   if (loading && !nodes.length) {
     return (
@@ -322,9 +452,31 @@ export function NetworkPath() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Network Path Visualization</span>
-            <Badge variant="outline" className="ml-2">
-              Live
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={autoLayout}
+                disabled={isAutoLayouting}
+                className="flex items-center gap-2"
+              >
+                <LayoutGrid className="w-4 h-4" />
+                {isAutoLayouting ? 'Layouting...' : 'Auto Layout'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => fetchNetworkData(true)}
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Badge variant="outline">
+                Live
+              </Badge>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
