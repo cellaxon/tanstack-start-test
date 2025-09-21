@@ -1,5 +1,7 @@
 # API Gateway Dashboard
 
+*[한국어 버전 (Korean Version)](./README.ko.md)*
+
 A modern, responsive dashboard for monitoring and managing API gateway traffic, built with React, TypeScript, and TanStack Router.
 
 ## 🚀 Recent Updates
@@ -84,6 +86,7 @@ A modern, responsive dashboard for monitoring and managing API gateway traffic, 
 - **Charts**: D3.js with custom React components
 - **Visualizations**: React Flow for network topology
 - **Build Tool**: Vite
+- **Testing**: Vitest, React Testing Library, @testing-library/jest-dom
 - **Mock Server**: Express.js with SQLite
 - **API Documentation**: Swagger UI + OpenAPI 3.0
 - **Code Quality**: Biome for linting and formatting
@@ -262,10 +265,85 @@ pnpm run build:serve
 
 ## Testing
 
-Run tests:
+### Unit Testing with Vitest
+
+The project uses Vitest for unit testing React components and utility functions.
+
+#### Run Tests
+
+Run all tests once:
 ```bash
 pnpm test
 ```
+
+Run tests in watch mode (auto-reruns on file changes):
+```bash
+pnpm test:watch
+```
+
+Generate coverage report:
+```bash
+pnpm test:coverage
+```
+
+#### Test Structure
+
+Tests are located alongside the source files:
+```
+src/
+├── components/
+│   ├── ui/
+│   │   ├── button.tsx
+│   │   ├── button.test.tsx      # Button component tests
+│   │   ├── card.tsx
+│   │   └── card.test.tsx         # Card component tests
+│   ├── Header.tsx
+│   └── Header.test.tsx           # Header component tests
+└── lib/
+    ├── utils.ts
+    └── utils.test.ts             # Utility function tests
+```
+
+#### Writing Tests
+
+Example test for a React component:
+```typescript
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
+import { Button } from './button'
+
+describe('Button Component', () => {
+  it('renders button with text', () => {
+    render(<Button>Click me</Button>)
+    expect(screen.getByRole('button', { name: 'Click me' })).toBeInTheDocument()
+  })
+
+  it('handles click events', () => {
+    const handleClick = vi.fn()
+    render(<Button onClick={handleClick}>Click me</Button>)
+    fireEvent.click(screen.getByRole('button'))
+    expect(handleClick).toHaveBeenCalledTimes(1)
+  })
+})
+```
+
+#### Test Configuration
+
+Vitest is configured in `vitest.config.ts`:
+- Environment: jsdom (for DOM testing)
+- Global test APIs enabled
+- Coverage provider: V8
+- Testing utilities: @testing-library/react, @testing-library/jest-dom
+
+#### Coverage Reports
+
+After running `pnpm test:coverage`, view the HTML coverage report:
+```bash
+# Open coverage report in browser
+open coverage/index.html
+```
+
+### SSG Testing
 
 Test SSG build:
 ```bash
@@ -299,7 +377,9 @@ pnpm run check
 | `pnpm run build` | Build static site (SSG) |
 | `pnpm run serve` | Serve built static site |
 | `pnpm run build:serve` | Build and serve with mock server |
-| `pnpm test` | Run tests |
+| `pnpm test` | Run unit tests with Vitest |
+| `pnpm run test:watch` | Run tests in watch mode |
+| `pnpm run test:coverage` | Run tests with coverage report |
 | `pnpm run test:ssg` | Test SSG build |
 | `pnpm run format` | Format code with Biome |
 | `pnpm run lint` | Lint code with Biome |
