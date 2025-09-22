@@ -15,6 +15,7 @@ import {
 	Users,
 	DollarSign,
 	GitBranch,
+	Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,12 @@ const menuItems = [
 		icon: Home,
 		href: "/dashboard",
 		description: "Overview of API Gateway metrics",
+	},
+	{
+		title: "Banking Monitor",
+		icon: Building2,
+		href: "/banking",
+		description: "Banking API Gateway monitoring",
 	},
 	{
 		title: "API Traffic",

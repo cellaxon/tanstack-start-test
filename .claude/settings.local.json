@@ -38,7 +38,8 @@
       "Bash(git push:*)",
       "Bash(powershell:*)",
       "Bash(chmod:*)",
-      "Bash(.kill-ports.ps1 3000)"
+      "Bash(.kill-ports.ps1 3000)",
+      "Bash(./kill-ports.ps1 3000)"
     ],
     "deny": [],
     "ask": []
