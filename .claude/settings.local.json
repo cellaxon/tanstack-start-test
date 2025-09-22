@@ -24,7 +24,15 @@
       "Bash(git commit:*)",
       "Bash(del \"D:\\project\\tanstack-start-test\\src\\components\\Header.tsx\")",
       "Bash(dir:*)",
-      "Bash(pnpm test:*)"
+      "Bash(pnpm test:*)",
+      "Bash(npx @biomejs/biome format:*)",
+      "Bash(npx @biomejs/biome lint:*)",
+      "Bash(npm config:*)",
+      "Read(//c/Users/Sanghyo Lee/**)",
+      "Bash(set)",
+      "Bash(env)",
+      "Bash(unset npm_config_verify_deps_before_run)",
+      "Bash(unset npm_config__jsr_registry)"
     ],
     "deny": [],
     "ask": []
