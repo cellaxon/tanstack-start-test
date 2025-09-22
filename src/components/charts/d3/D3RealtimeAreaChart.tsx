@@ -16,7 +16,7 @@ interface D3RealtimeAreaChartProps {
 
 export function D3RealtimeAreaChart({
   data,
-  width = 600,
+  width = 9999,
   height = 300,
   xKey = 'time',
   yKeys = ['value'],
@@ -30,12 +30,13 @@ export function D3RealtimeAreaChart({
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<any>({});
   const previousDataRef = useRef<any[]>([]);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   // Initialize chart once
   useEffect(() => {
     if (!svgRef.current) return;
 
-    const containerWidth = containerRef.current?.clientWidth || width;
+    const containerWidth = containerRef.current?.clientWidth || 600;
     const actualWidth = Math.min(containerWidth, width);
 
     const svg = d3.select(svgRef.current);
@@ -288,6 +289,48 @@ export function D3RealtimeAreaChart({
   useEffect(() => {
     updateChart();
   }, [updateChart]);
+
+  // Handle resize
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const handleResize = () => {
+      if (!svgRef.current || !containerRef.current) return;
+
+      const containerWidth = containerRef.current.clientWidth || 600;
+      const actualWidth = Math.min(containerWidth, width);
+
+      const svg = d3.select(svgRef.current);
+      svg.attr('width', actualWidth);
+
+      const margin = { top: 20, right: 30, bottom: 60, left: 60 };
+      const innerWidth = actualWidth - margin.left - margin.right;
+
+      if (chartRef.current.xScale && chartRef.current.g) {
+        chartRef.current.xScale.range([0, innerWidth]);
+        chartRef.current.innerWidth = innerWidth;
+
+        // Update grid width if exists
+        if (chartRef.current.gridY) {
+          chartRef.current.gridY.call(d3.axisLeft(chartRef.current.yScale)
+            .tickSize(-innerWidth)
+            .tickFormat(() => ''));
+        }
+
+        // Trigger chart update
+        updateChart();
+      }
+    };
+
+    resizeObserverRef.current = new ResizeObserver(handleResize);
+    resizeObserverRef.current.observe(containerRef.current);
+
+    return () => {
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+      }
+    };
+  }, [width, updateChart]);
 
   return (
     <div ref={containerRef} style={{ width: '100%', maxWidth: width }}>

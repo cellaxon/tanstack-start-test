@@ -118,7 +118,6 @@ export function ErrorTracking() {
           <CardContent>
             <D3RealtimeAreaChart
               data={errorRateData}
-              width={500}
               height={300}
               xKey="time"
               yKeys={['errorRate']}
@@ -138,7 +137,6 @@ export function ErrorTracking() {
           <CardContent>
             <D3RealtimePieChart
               data={statusCodeData}
-              width={400}
               height={300}
               valueKey="value"
               nameKey="name"
@@ -160,7 +158,6 @@ export function ErrorTracking() {
                 ...item,
                 time: new Date(item.time).toLocaleTimeString()
               }))}
-              width={500}
               height={300}
               xKey="time"
               yKey="totalErrors"

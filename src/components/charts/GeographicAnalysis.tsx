@@ -139,7 +139,6 @@ export function GeographicAnalysis() {
                 <h3 className="text-sm font-medium mb-3">지역별 요청 비율</h3>
                 <D3RealtimeBarChart
                   data={sortedRegions}
-                  width={500}
                   height={350}
                   xKey="region"
                   yKey="requests"
@@ -161,7 +160,6 @@ export function GeographicAnalysis() {
           <CardContent>
             <D3RealtimePieChart
               data={clientData?.distribution || []}
-              width={400}
               height={300}
               valueKey="percentage"
               nameKey="type"
@@ -199,7 +197,6 @@ export function GeographicAnalysis() {
           <CardContent>
             <D3RealtimeBarChart
               data={browserData}
-              width={500}
               height={200}
               xKey="name"
               yKey="value"
@@ -268,7 +265,6 @@ export function GeographicAnalysis() {
         <CardContent>
           <D3RealtimePieChart
             data={osData}
-            width={400}
             height={250}
             valueKey="value"
             nameKey="name"

@@ -46,7 +46,6 @@ export function TrafficMonitoring() {
           <CardContent>
             <D3RealtimeLineChart
               data={rpsTPSData}
-              width={500}
               height={300}
               xKey="time"
               yKey="RPS"
@@ -69,7 +68,6 @@ export function TrafficMonitoring() {
           <CardContent>
             <D3RealtimeBarChart
               data={responseTimeData}
-              width={500}
               height={300}
               xKey="name"
               yKey="value"
@@ -99,7 +97,6 @@ export function TrafficMonitoring() {
                 time: item.timestamp,
                 connections: item.activeConnections,
               }))}
-              width={500}
               height={200}
               xKey="time"
               yKeys={['connections']}

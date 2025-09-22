@@ -127,7 +127,6 @@ export function SecurityMonitoring() {
           <CardContent>
             <D3RealtimePieChart
               data={rateLimitingData}
-              width={400}
               height={300}
               valueKey="value"
               nameKey="name"
@@ -146,7 +145,6 @@ export function SecurityMonitoring() {
           <CardContent>
             <D3RealtimeLineChart
               data={authData}
-              width={500}
               height={300}
               xKey="time"
               yKey="successful"
@@ -166,7 +164,6 @@ export function SecurityMonitoring() {
           <CardContent>
             <D3RealtimeBarChart
               data={suspiciousData}
-              width={500}
               height={300}
               xKey="type"
               yKey="attempts"

@@ -154,7 +154,6 @@ export function BusinessMetrics() {
           <CardContent>
             <D3RealtimeBarChart
               data={apiUsageChartData}
-              width={500}
               height={400}
               xKey="name"
               yKey="calls"
@@ -215,7 +214,6 @@ export function BusinessMetrics() {
           <CardContent>
             <D3RealtimeBarChart
               data={apiUsageChartData.slice(0, 5)}
-              width={500}
               height={300}
               xKey="name"
               yKey="avgTime"

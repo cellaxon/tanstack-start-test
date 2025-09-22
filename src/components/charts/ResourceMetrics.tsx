@@ -148,7 +148,6 @@ export function ResourceMetrics() {
           <CardContent>
             <D3RealtimeAreaChart
               data={cpuData}
-              width={500}
               height={300}
               xKey="time"
               yKeys={['usage']}
@@ -168,7 +167,6 @@ export function ResourceMetrics() {
           <CardContent>
             <D3RealtimeLineChart
               data={memoryData}
-              width={500}
               height={300}
               xKey="time"
               yKey="used"
@@ -188,7 +186,6 @@ export function ResourceMetrics() {
           <CardContent>
             <D3RealtimeAreaChart
               data={connectionData}
-              width={500}
               height={300}
               xKey="time"
               yKeys={['active', 'idle', 'waiting']}
@@ -209,7 +206,6 @@ export function ResourceMetrics() {
           <CardContent>
             <D3RealtimeLineChart
               data={networkData}
-              width={500}
               height={300}
               xKey="time"
               yKey="inbound"

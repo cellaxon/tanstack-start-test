@@ -16,7 +16,7 @@ interface D3RealtimePieChartProps {
 
 export function D3RealtimePieChart({
   data,
-  width = 400,
+  width = 9999,
   height = 400,
   valueKey = 'value',
   nameKey = 'name',
@@ -30,12 +30,13 @@ export function D3RealtimePieChart({
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<any>({});
   const previousDataRef = useRef<any[]>([]);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   // Initialize chart once
   useEffect(() => {
     if (!svgRef.current) return;
 
-    const containerWidth = containerRef.current?.clientWidth || width;
+    const containerWidth = containerRef.current?.clientWidth || 400;
     const actualWidth = Math.min(containerWidth, width);
     const actualHeight = Math.min(actualWidth, height);
 
@@ -260,6 +261,58 @@ export function D3RealtimePieChart({
   useEffect(() => {
     updateChart();
   }, [updateChart]);
+
+  // Handle resize
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const handleResize = () => {
+      if (!svgRef.current || !containerRef.current) return;
+
+      const containerWidth = containerRef.current.clientWidth || 400;
+      const actualWidth = Math.min(containerWidth, width);
+      const actualHeight = Math.min(actualWidth, height);
+
+      const svg = d3.select(svgRef.current);
+      svg.attr('width', actualWidth).attr('height', actualHeight);
+
+      const margin = 40;
+      const legendWidth = showLegend ? 150 : 0;
+      const chartWidth = actualWidth - legendWidth;
+      const radius = Math.min(chartWidth, actualHeight) / 2 - margin;
+
+      if (chartRef.current.g) {
+        // Update main group position
+        chartRef.current.g.attr('transform', `translate(${chartWidth / 2},${actualHeight / 2})`);
+
+        // Update legend position if it exists
+        if (chartRef.current.legendGroup) {
+          chartRef.current.legendGroup.attr('transform', `translate(${chartWidth + 20}, ${actualHeight / 2 - 50})`);
+        }
+
+        // Update arcs with new radius
+        if (chartRef.current.arc && chartRef.current.pie) {
+          chartRef.current.arc
+            .outerRadius(radius)
+            .innerRadius(innerRadius * radius);
+
+          chartRef.current.radius = radius;
+
+          // Trigger chart update
+          updateChart();
+        }
+      }
+    };
+
+    resizeObserverRef.current = new ResizeObserver(handleResize);
+    resizeObserverRef.current.observe(containerRef.current);
+
+    return () => {
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+      }
+    };
+  }, [width, height, innerRadius, showLegend, updateChart]);
 
   return (
     <div ref={containerRef} style={{ width: '100%', maxWidth: width }}>
