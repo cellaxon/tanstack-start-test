@@ -13,3 +13,6 @@ count.txt
 todos.json
 *.db
 nul
+
+# Generated files
+src/routeTree.gen.ts

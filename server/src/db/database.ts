@@ -1,10 +1,19 @@
 import sqlite3 from 'sqlite3';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { mkdirSync } from 'node:fs';
 import type { SystemMetrics } from '../types/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const dbPath = join(__dirname, '../../data/metrics.db');
+const dataDir = join(__dirname, '../../data');
+const dbPath = join(dataDir, 'metrics.db');
+
+// Ensure data directory exists
+try {
+  mkdirSync(dataDir, { recursive: true });
+} catch (err) {
+  console.error('Error creating data directory:', err);
+}
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
