@@ -55,7 +55,7 @@ function generateHistoricalData(metric: string, period: string) {
 
   for (let i = intervals; i >= 0; i--) {
     const timestamp = new Date(Date.now() - i * 60000 * (period === '1h' ? 1 : 60));
-    let value: any;
+    let value: { rps?: number; tps?: number; errorRate?: string; errorCount?: number; p50?: number; p95?: number; p99?: number; };
 
     switch(metric) {
       case 'traffic':

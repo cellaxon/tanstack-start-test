@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import { Server } from 'http';
+import type { Server } from 'node:http';
 
 export function setupWebSocketServer(server: Server) {
   const wss = new WebSocketServer({ server });
@@ -57,13 +57,13 @@ export function setupWebSocketServer(server: Server) {
   console.log('WebSocket server initialized');
 }
 
-function broadcast(clients: Set<WebSocket>, data: any) {
+function broadcast(clients: Set<WebSocket>, data: { type: string; data?: unknown; timestamp?: Date }) {
   const message = JSON.stringify(data);
-  clients.forEach((client) => {
+  for (const client of clients) {
     if (client.readyState === WebSocket.OPEN) {
       client.send(message);
     }
-  });
+  }
 }
 
 // Mock data generators

@@ -2,7 +2,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
-import { createServer } from 'http';
+import { createServer } from 'node:http';
 import swaggerUi from 'swagger-ui-express';
 import apiRouter from './routes/api.js';
 import authRouter from './routes/auth.js';
