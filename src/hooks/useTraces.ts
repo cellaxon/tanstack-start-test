@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { AuthService } from "@/lib/auth";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 // Types
@@ -42,7 +42,7 @@ export function useEnsureAuth() {
 				// For demo, create a mock login with admin credentials
 				try {
 					const response = await fetch(
-						`${import.meta.env.VITE_API_URL || "http://localhost:4001/api"}/auth/login`,
+						`${import.meta.env.VITE_API_URL || "http://localhost:4000"}/auth/login`,
 						{
 							method: "POST",
 							headers: {
@@ -84,7 +84,7 @@ export function useTraces(limit: number = 10) {
 	return useQuery({
 		queryKey: ["traces", limit],
 		queryFn: async () => {
-			return apiClient.get<TracesResponse>("/traces", {
+			return apiClient.get<TracesResponse>("/api/traces", {
 				params: { limit },
 			});
 		},
@@ -107,7 +107,7 @@ export function useTraceDetails(traceId: string | null) {
 		queryKey: ["trace", traceId],
 		queryFn: async () => {
 			if (!traceId) throw new Error("No trace ID provided");
-			return apiClient.get<TraceData>(`/traces/${traceId}`);
+			return apiClient.get<TraceData>(`/api/traces/${traceId}`);
 		},
 		enabled: !!traceId, // Only run query if traceId exists
 		staleTime: 60000, // Consider data stale after 1 minute
@@ -129,7 +129,7 @@ export function useSearchTraces(searchTerm: string) {
 		queryFn: async () => {
 			if (!searchTerm) return { traces: [], total: 0, timestamp: new Date() };
 
-			return apiClient.get<TracesResponse>("/traces", {
+			return apiClient.get<TracesResponse>("/api/traces", {
 				params: {
 					search: searchTerm,
 					limit: 20,
@@ -148,7 +148,7 @@ export function useRefreshTraces() {
 
 	return useMutation({
 		mutationFn: async (limit: number = 10) => {
-			return apiClient.get<TracesResponse>("/traces", {
+			return apiClient.get<TracesResponse>("/api/traces", {
 				params: { limit },
 			});
 		},
@@ -168,7 +168,7 @@ export function useDeleteTrace() {
 
 	return useMutation({
 		mutationFn: async (traceId: string) => {
-			return apiClient.delete(`/traces/${traceId}`);
+			return apiClient.delete(`/api/traces/${traceId}`);
 		},
 		onSuccess: () => {
 			// Invalidate and refetch traces list
@@ -185,7 +185,7 @@ export function usePrefetchTrace() {
 		queryClient.prefetchQuery({
 			queryKey: ["trace", traceId],
 			queryFn: async () => {
-				return apiClient.get<TraceData>(`/traces/${traceId}`);
+				return apiClient.get<TraceData>(`/api/traces/${traceId}`);
 			},
 			staleTime: 60000,
 		});
@@ -198,7 +198,7 @@ export function useTraceWaterfall(traceId: string | null) {
 		queryKey: ["trace", traceId, "waterfall"],
 		queryFn: async () => {
 			if (!traceId) throw new Error("No trace ID provided");
-			return apiClient.get(`/traces/${traceId}/waterfall`);
+			return apiClient.get(`/api/traces/${traceId}/waterfall`);
 		},
 		enabled: !!traceId,
 		staleTime: 60000,

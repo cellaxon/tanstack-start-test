@@ -8,7 +8,7 @@ OAuth 및 API 통합 테스트를 위한 Mock 서버입니다.
 # 서버 의존성 설치
 npm run server:install
 
-# 서버만 실행 (포트 3001)
+# 서버만 실행 (포트 3000)
 npm run dev:server
 
 # 프론트엔드와 서버 동시 실행
@@ -73,7 +73,7 @@ npm run dev:all
 
 `.env` 파일:
 ```env
-PORT=3001
+PORT=3000
 JWT_SECRET=your-secret-key
 JWT_REFRESH_SECRET=your-refresh-secret-key
 ```

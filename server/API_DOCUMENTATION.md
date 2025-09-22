@@ -1,7 +1,7 @@
 # Mock Server API Documentation
 
 ## Base URL
-- Development: `http://localhost:4001/api`
+- Development: `http://localhost:4000/api`
 - API Version: 1.0.0
 
 ## Authentication
@@ -467,7 +467,7 @@ The server supports CORS for all origins in development mode.
 
 ## WebSocket Events (Future)
 
-Connection URL: `ws://localhost:4001/ws`
+Connection URL: `ws://localhost:4000/ws`
 
 Events:
 - `metrics:update` - Real-time metrics updates

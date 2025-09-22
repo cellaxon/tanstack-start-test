@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "../lib/api-client";
 
 export type TimeRange = "1m" | "5m" | "1h" | "1d" | "1w" | "1M" | "1y";
 
@@ -47,12 +48,9 @@ export function useSystemMetrics(timeRange: TimeRange = "1h") {
 	return useQuery({
 		queryKey: ["system-metrics", timeRange],
 		queryFn: async () => {
-			const response = await fetch(
-				`/api/metrics/history?duration=${timeRange}`,
-			);
-			if (!response.ok) throw new Error("Failed to fetch metrics");
-			const data: MetricsResponse = await response.json();
-			return data.data;
+			return await apiClient.get(`/metrics/system`, {
+				params: { duration: timeRange },
+			});
 		},
 		refetchInterval: timeRange === "1m" || timeRange === "5m" ? 10000 : 30000, // 10s for short ranges, 30s for others
 		staleTime: 5000, // Consider data stale after 5 seconds
@@ -63,10 +61,7 @@ export function useCurrentMetrics() {
 	return useQuery({
 		queryKey: ["current-metrics"],
 		queryFn: async () => {
-			const response = await fetch("/api/metrics/current");
-			if (!response.ok) throw new Error("Failed to fetch current metrics");
-			const data = await response.json();
-			return data.data;
+			return await apiClient.get("/metrics/current");
 		},
 		refetchInterval: 5000, // Refetch every 5 seconds for real-time data
 		staleTime: 2000,
@@ -77,10 +72,9 @@ export function useMetricsStats(timeRange: TimeRange = "1h") {
 	return useQuery({
 		queryKey: ["metrics-stats", timeRange],
 		queryFn: async () => {
-			const response = await fetch(`/api/metrics/stats?duration=${timeRange}`);
-			if (!response.ok) throw new Error("Failed to fetch stats");
-			const data: StatsResponse = await response.json();
-			return data.data;
+			return await apiClient.get("/metrics/stats", {
+				params: { duration: timeRange },
+			});
 		},
 		refetchInterval: 60000,
 		staleTime: 30000,

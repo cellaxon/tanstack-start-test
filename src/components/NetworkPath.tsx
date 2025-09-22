@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ReactFlow, {
 	MiniMap,
 	Controls,
@@ -17,9 +17,9 @@ import ReactFlow, {
 	EdgeProps,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LayoutGrid, RefreshCw } from "lucide-react";
 
 interface NetworkNode extends Node {
@@ -219,7 +219,7 @@ export function NetworkPath() {
 			try {
 				setLoading(true);
 				const response = await fetch(
-					"http://localhost:4001/api/dashboard/network-path",
+					"http://localhost:4000/api/dashboard/network-path",
 				);
 				if (!response.ok) throw new Error("Failed to fetch network data");
 

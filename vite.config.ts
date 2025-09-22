@@ -23,7 +23,19 @@ const config = defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:4001',
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/auth': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/metrics': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/proxy': {
+        target: 'http://localhost:4000',
         changeOrigin: true,
       },
     },

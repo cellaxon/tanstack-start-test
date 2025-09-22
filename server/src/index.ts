@@ -1,20 +1,20 @@
-import express from 'express';
-import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
 import dotenv from 'dotenv';
+import express from 'express';
 import swaggerUi from 'swagger-ui-express';
-import { swaggerSpec } from './swagger.js';
-import authRouter from './routes/auth.js';
 import apiRouter from './routes/api.js';
+import authRouter from './routes/auth.js';
 import dashboardRouter from './routes/dashboard.js';
 import metricsRouter from './routes/metrics.js';
 import proxyRouter from './routes/proxy.js';
 import { startMonitoring } from './services/monitoring.js';
+import { swaggerSpec } from './swagger.js';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 4001;
+const PORT = process.env.PORT || 4000;
 
 app.use(cors({
   origin: (origin, callback) => {

@@ -34,7 +34,11 @@
       "Bash(unset npm_config_verify_deps_before_run)",
       "Bash(unset npm_config__jsr_registry)",
       "Bash(npm run typecheck:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git push:*)",
+      "Bash(powershell:*)",
+      "Bash(chmod:*)",
+      "Bash(.kill-ports.ps1 3000)"
     ],
     "deny": [],
     "ask": []

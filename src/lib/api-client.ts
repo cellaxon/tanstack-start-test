@@ -9,7 +9,7 @@ class ApiClient {
 	private baseUrl: string;
 
 	constructor(baseUrl?: string) {
-		this.baseUrl = baseUrl || import.meta.env.VITE_API_URL || "/api";
+		this.baseUrl = baseUrl || import.meta.env.VITE_API_URL || "";
 	}
 
 	private async request<T>(

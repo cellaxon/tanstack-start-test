@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 3000",
-    "dev:server": "cd server && npm run dev",
-    "dev:all": "concurrently \"npm run dev\" \"npm run dev:server\"",
+    "dev:server": "cd server && pnpm run dev",
+    "dev:all": "concurrently \"pnpm run dev\" \"pnpm run dev:server\"",
     "build": "vite build -c vite.config.ssg.ts && node scripts/ssg-advanced.js",
     "serve": "npx serve dist-ssg -p 3000",
     "test:ssg": "node scripts/test-ssg.js",
@@ -16,7 +16,9 @@
     "lint": "biome lint",
     "check": "biome check",
     "server:install": "cd server && pnpm install",
-    "build:serve": "pnpm run build && concurrently \"pnpm run serve\" \"pnpm run dev:server\""
+    "build:serve": "pnpm run build && concurrently \"pnpm run serve\" \"pnpm run dev:server\"",
+    "kill-ports": "powershell -ExecutionPolicy Bypass -File kill-ports.ps1",
+    "kill-ports:py": "python kill-ports.py"
   },
   "dependencies": {
     "@faker-js/faker": "^9.6.0",
