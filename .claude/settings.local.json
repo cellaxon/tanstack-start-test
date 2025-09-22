@@ -41,7 +41,11 @@
       "Bash(.kill-ports.ps1 3000)",
       "Bash(./kill-ports.ps1 3000)",
       "Bash(pnpm remove:*)",
-      "Bash(pnpm list:*)"
+      "Bash(pnpm list:*)",
+      "Bash(for:*)",
+      "Bash(do echo \"Linting: $file\")",
+      "Bash(done)",
+      "Bash(pnpm rebuild:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,194 +1,90 @@
-import sqlite3 from 'sqlite3';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { mkdirSync } from 'node:fs';
 import type { SystemMetrics } from '../types/index.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const dataDir = join(__dirname, '../../data');
-const dbPath = join(dataDir, 'metrics.db');
-
-// Ensure data directory exists
-try {
-  mkdirSync(dataDir, { recursive: true });
-} catch (err) {
-  console.error('Error creating data directory:', err);
-}
-
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Error opening database:', err);
-  } else {
-    console.log('Connected to SQLite database');
-    initializeDatabase();
-  }
-});
-
-function initializeDatabase(): void {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS system_metrics (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-      cpu_usage REAL,
-      memory_usage REAL,
-      memory_total REAL,
-      memory_free REAL,
-      swap_usage REAL,
-      swap_total REAL,
-      swap_free REAL,
-      process_cpu REAL,
-      process_memory REAL,
-      network_rx REAL,
-      network_tx REAL,
-      disk_usage REAL,
-      disk_total REAL
-    )
-  `, (err) => {
-    if (err) {
-      console.error('Error creating table:', err);
-    } else {
-      console.log('System metrics table ready');
-
-      // Create index for faster queries
-      db.run("CREATE INDEX IF NOT EXISTS idx_timestamp ON system_metrics(timestamp DESC)");
-
-      // Try to add swap columns if they don't exist (for existing databases)
-      db.run("ALTER TABLE system_metrics ADD COLUMN swap_usage REAL", () => {});
-      db.run("ALTER TABLE system_metrics ADD COLUMN swap_total REAL", () => {});
-      db.run("ALTER TABLE system_metrics ADD COLUMN swap_free REAL", () => {});
-    }
-  });
-}
+// In-memory storage for metrics
+const memoryStorage: SystemMetrics[] = [];
+const MAX_MEMORY_RECORDS = 10000; // Keep last 10k records in memory
 
 export function saveMetrics(metrics: SystemMetrics): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const sql = `
-      INSERT INTO system_metrics (
-        cpu_usage, memory_usage, memory_total, memory_free,
-        swap_usage, swap_total, swap_free,
-        process_cpu, process_memory, network_rx, network_tx,
-        disk_usage, disk_total
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+  // Save to memory storage
+  const metricsWithTimestamp = {
+    ...metrics,
+    timestamp: new Date().toISOString(),
+    id: memoryStorage.length + 1
+  };
+  memoryStorage.push(metricsWithTimestamp as any);
 
-    db.run(sql, [
-      metrics.cpu_usage,
-      metrics.memory_usage,
-      metrics.memory_total,
-      metrics.memory_free,
-      metrics.swap_usage || 0,
-      metrics.swap_total || 0,
-      metrics.swap_free || 0,
-      metrics.process_cpu,
-      metrics.process_memory,
-      metrics.network_rx || 0,
-      metrics.network_tx || 0,
-      metrics.disk_usage || 0,
-      metrics.disk_total || 0
-    ], function(this: sqlite3.RunResult, err: Error | null) {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(this.lastID);
-      }
-    });
-  });
+  // Keep only last MAX_MEMORY_RECORDS
+  if (memoryStorage.length > MAX_MEMORY_RECORDS) {
+    memoryStorage.splice(0, memoryStorage.length - MAX_MEMORY_RECORDS);
+  }
+
+  return Promise.resolve(metricsWithTimestamp.id);
 }
 
 export type TimeRange = '1m' | '5m' | '1h' | '1d' | '1w' | '1M' | '1y';
 
 export function getMetrics(duration: TimeRange): Promise<SystemMetrics[]> {
-  return new Promise((resolve, reject) => {
-    let whereClause = '';
+  // Get from memory storage
+  const now = new Date();
+  let cutoffTime = new Date();
 
-    switch(duration) {
-      case '1m':
-        whereClause = "WHERE datetime(timestamp) >= datetime('now', '-1 minute')";
-        break;
-      case '5m':
-        whereClause = "WHERE datetime(timestamp) >= datetime('now', '-5 minutes')";
-        break;
-      case '1h':
-        whereClause = "WHERE datetime(timestamp) >= datetime('now', '-1 hour')";
-        break;
-      case '1d':
-        whereClause = "WHERE datetime(timestamp) >= datetime('now', '-1 day')";
-        break;
-      case '1w':
-        whereClause = "WHERE datetime(timestamp) >= datetime('now', '-7 days')";
-        break;
-      case '1M':
-        whereClause = "WHERE datetime(timestamp) >= datetime('now', '-1 month')";
-        break;
-      case '1y':
-        whereClause = "WHERE datetime(timestamp) >= datetime('now', '-1 year')";
-        break;
-      default:
-        whereClause = "WHERE datetime(timestamp) >= datetime('now', '-1 hour')";
-    }
+  switch(duration) {
+    case '1m':
+      cutoffTime.setMinutes(now.getMinutes() - 1);
+      break;
+    case '5m':
+      cutoffTime.setMinutes(now.getMinutes() - 5);
+      break;
+    case '1h':
+      cutoffTime.setHours(now.getHours() - 1);
+      break;
+    case '1d':
+      cutoffTime.setDate(now.getDate() - 1);
+      break;
+    case '1w':
+      cutoffTime.setDate(now.getDate() - 7);
+      break;
+    case '1M':
+      cutoffTime.setMonth(now.getMonth() - 1);
+      break;
+    case '1y':
+      cutoffTime.setFullYear(now.getFullYear() - 1);
+      break;
+    default:
+      cutoffTime.setHours(now.getHours() - 1);
+  }
 
-    // Aggregate data based on duration
-    let groupBy = '';
-    if (duration === '1d' || duration === '1w') {
-      groupBy = ", strftime('%Y-%m-%d %H:00:00', timestamp) as time_bucket GROUP BY time_bucket";
-    } else if (duration === '1M') {
-      groupBy = ", strftime('%Y-%m-%d', timestamp) as time_bucket GROUP BY time_bucket";
-    } else if (duration === '1y') {
-      groupBy = ", strftime('%Y-%m-%d', timestamp) as time_bucket GROUP BY time_bucket";
-    }
-
-    const sql = groupBy ? `
-      SELECT
-        time_bucket as timestamp,
-        AVG(cpu_usage) as cpu_usage,
-        AVG(memory_usage) as memory_usage,
-        AVG(memory_total) as memory_total,
-        AVG(memory_free) as memory_free,
-        AVG(swap_usage) as swap_usage,
-        AVG(swap_total) as swap_total,
-        AVG(swap_free) as swap_free,
-        AVG(process_cpu) as process_cpu,
-        AVG(process_memory) as process_memory,
-        AVG(network_rx) as network_rx,
-        AVG(network_tx) as network_tx,
-        AVG(disk_usage) as disk_usage,
-        AVG(disk_total) as disk_total
-      FROM system_metrics
-      ${whereClause}
-      ${groupBy}
-      ORDER BY timestamp DESC
-      LIMIT 1000
-    ` : `
-      SELECT * FROM system_metrics
-      ${whereClause}
-      ORDER BY timestamp DESC
-      LIMIT 1000
-    `;
-
-    db.all(sql, [], (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(rows as SystemMetrics[]);
-      }
-    });
+  const filtered = memoryStorage.filter((m: any) => {
+    const timestamp = new Date(m.timestamp);
+    return timestamp >= cutoffTime;
   });
+
+  // Return sorted by timestamp desc
+  return Promise.resolve(filtered.sort((a: any, b: any) =>
+    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  ).slice(0, 1000));
 }
 
 export function cleanOldMetrics(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    // Keep only last 1 year of data
-    const sql = "DELETE FROM system_metrics WHERE datetime(timestamp) < datetime('now', '-1 year')";
+  // Clean old metrics from memory (keep last 24 hours)
+  const cutoffTime = new Date();
+  cutoffTime.setDate(cutoffTime.getDate() - 1);
 
-    db.run(sql, function(this: sqlite3.RunResult, err: Error | null) {
-      if (err) {
-        reject(err);
-      } else {
-        console.log(`Cleaned ${this.changes} old metric records`);
-        resolve(this.changes);
-      }
-    });
+  const beforeLength = memoryStorage.length;
+  const filtered = memoryStorage.filter((m: any) => {
+    const timestamp = new Date(m.timestamp);
+    return timestamp >= cutoffTime;
   });
+
+  memoryStorage.length = 0;
+  memoryStorage.push(...filtered);
+
+  const removed = beforeLength - memoryStorage.length;
+  console.log(`Cleaned ${removed} old metric records from memory`);
+  return Promise.resolve(removed);
 }
 
+// Export null as default since we're not using a database
+const db = null;
 export default db;
+export const dbAvailable = false;

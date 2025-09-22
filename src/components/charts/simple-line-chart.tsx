@@ -38,7 +38,8 @@ export function SimpleLineChart({
 			.select(container)
 			.append("svg")
 			.attr("width", width)
-			.attr("height", height);
+			.attr("height", height)
+			.style("cursor", "crosshair");
 
 		const g = svg
 			.append("g")
@@ -143,15 +144,28 @@ export function SimpleLineChart({
 			.attr("stroke-dasharray", "3,3")
 			.style("pointer-events", "none");
 
-		// Horizontal line
-		const horizontalLine = crosshairGroup
+		// Horizontal line for first data series
+		const horizontalLine1 = crosshairGroup
 			.append("line")
 			.attr("x1", 0)
 			.attr("x2", innerWidth)
-			.attr("stroke", "#999")
+			.attr("stroke", color)
 			.attr("stroke-width", 1)
 			.attr("stroke-dasharray", "3,3")
+			.attr("opacity", 0.5)
 			.style("pointer-events", "none");
+
+		// Horizontal line for second data series (if exists)
+		const horizontalLine2 = crosshairGroup
+			.append("line")
+			.attr("x1", 0)
+			.attr("x2", innerWidth)
+			.attr("stroke", color2)
+			.attr("stroke-width", 1)
+			.attr("stroke-dasharray", "3,3")
+			.attr("opacity", 0.5)
+			.style("pointer-events", "none")
+			.style("display", "none");
 
 		// Tooltip background
 		const tooltipBg = crosshairGroup
@@ -180,11 +194,16 @@ export function SimpleLineChart({
 			.style("display", label2 ? "block" : "none");
 
 		// Create overlay for mouse events
-		g.append("rect")
+		const overlay = g.append("rect")
 			.attr("width", innerWidth)
 			.attr("height", innerHeight)
 			.attr("fill", "none")
-			.attr("pointer-events", "all")
+			.attr("pointer-events", "all");
+
+		overlay
+			.on("mouseenter", () => {
+				crosshairGroup.style("display", "block");
+			})
 			.on("mousemove", (event) => {
 				const [mouseX, mouseY] = d3.pointer(event);
 
@@ -202,9 +221,38 @@ export function SimpleLineChart({
 				const yPos2 =
 					closestData.value2 !== undefined ? yScale(closestData.value2) : 0;
 
-				// Update crosshair position
+				// Update crosshair position - snap to data point
 				verticalLine.attr("x1", xPos).attr("x2", xPos);
-				horizontalLine.attr("y1", mouseY).attr("y2", mouseY);
+
+				// Update horizontal lines based on proximity to mouse
+				if (label2 && closestData.value2 !== undefined) {
+					// Two lines exist - show the one closer to mouse cursor
+					const dist1 = Math.abs(yPos1 - mouseY);
+					const dist2 = Math.abs(yPos2 - mouseY);
+
+					if (dist1 < dist2) {
+						// First line is closer
+						horizontalLine1
+							.attr("y1", yPos1)
+							.attr("y2", yPos1)
+							.style("display", "block");
+						horizontalLine2.style("display", "none");
+					} else {
+						// Second line is closer
+						horizontalLine2
+							.attr("y1", yPos2)
+							.attr("y2", yPos2)
+							.style("display", "block");
+						horizontalLine1.style("display", "none");
+					}
+				} else {
+					// Only one line - show first horizontal line
+					horizontalLine1
+						.attr("y1", yPos1)
+						.attr("y2", yPos1)
+						.style("display", "block");
+					horizontalLine2.style("display", "none");
+				}
 
 				// Update focus circles position
 				focusCircle1.attr("cx", xPos).attr("cy", yPos1);
@@ -278,11 +326,15 @@ export function SimpleLineChart({
 					`translate(${tooltipX + padding / 2}, ${tooltipY + padding / 2 + 10})`,
 				);
 
-				crosshairGroup.style("display", "block");
 			})
-			.on("mouseout", () => {
-				crosshairGroup.style("display", "none");
+			.on("mouseleave", () => {
+				// Don't hide immediately - let SVG mouseleave handle it
 			});
+
+		// Add SVG-level mouse leave to handle when cursor completely leaves chart
+		svg.on("mouseleave", () => {
+			crosshairGroup.style("display", "none");
+		});
 	}, [data, color, color2, height, label, label2, yMax]);
 
 	return <div ref={containerRef} style={{ width: "100%", height }} />;

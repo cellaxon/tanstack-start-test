@@ -12,6 +12,9 @@ interface D3RealtimePieChartProps {
   showLabels?: boolean;
   showLegend?: boolean;
   transitionDuration?: number;
+  formatValue?: (value: number) => string;
+  labelThreshold?: number; // 최소 표시 비율 (%)
+  labelStyle?: 'inside' | 'outside'; // 레이블 스타일
 }
 
 export function D3RealtimePieChart({
@@ -24,13 +27,17 @@ export function D3RealtimePieChart({
   innerRadius = 0,
   showLabels = true,
   showLegend = true,
-  transitionDuration = 750
+  transitionDuration = 750,
+  formatValue = (v) => v.toFixed(0),
+  labelThreshold = 5, // 5% 이하는 레이블 숨김
+  labelStyle = 'outside'
 }: D3RealtimePieChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<any>({});
   const previousDataRef = useRef<any[]>([]);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const tooltipRef = useRef<any>(null);
 
   // Initialize chart once
   useEffect(() => {
@@ -87,6 +94,22 @@ export function D3RealtimePieChart({
         .attr('transform', `translate(${chartWidth + 20}, 20)`);
     }
 
+    // Tooltip
+    if (!tooltipRef.current) {
+      tooltipRef.current = d3.select('body').append('div')
+        .attr('class', 'chart-tooltip-realtime-pie')
+        .style('position', 'absolute')
+        .style('opacity', 0)
+        .style('background', 'rgba(0, 0, 0, 0.9)')
+        .style('color', 'white')
+        .style('padding', '10px')
+        .style('border-radius', '6px')
+        .style('font-size', '12px')
+        .style('pointer-events', 'none')
+        .style('box-shadow', '0 4px 6px rgba(0, 0, 0, 0.1)')
+        .style('z-index', '1000');
+    }
+
     // Store references
     chartRef.current = {
       svg,
@@ -125,7 +148,8 @@ export function D3RealtimePieChart({
       pie,
       arc,
       labelArc,
-      color
+      color,
+      radius
     } = chartRef.current;
 
     // Set color domain
@@ -156,8 +180,8 @@ export function D3RealtimePieChart({
       .attr('stroke-width', 2)
       .attr('d', arc);
 
-    // Add hover effects
-    newSlices
+    // Add hover effects with tooltip to all slices (new and existing)
+    slicesGroup.selectAll('path')
       .on('mouseover', function(event, d: any) {
         d3.select(this)
           .transition()
@@ -166,12 +190,33 @@ export function D3RealtimePieChart({
             const [x, y] = arc.centroid(d);
             return `translate(${x * 0.1},${y * 0.1})`;
           });
+
+        // Show tooltip
+        if (tooltipRef.current) {
+          const total = d3.sum(data, (item: any) => item[valueKey]);
+          const percentage = ((d.data[valueKey] / total) * 100).toFixed(1);
+          const value = formatValue(d.data[valueKey]);
+
+          tooltipRef.current.transition().duration(100).style('opacity', 0.95);
+          tooltipRef.current.html(`
+            <div style="font-weight: bold; margin-bottom: 5px;">${d.data[nameKey]}</div>
+            <div style="color: ${color(d.data[nameKey])}">● 값: ${value}</div>
+            <div style="color: ${color(d.data[nameKey])}">● 비율: ${percentage}%</div>
+          `)
+            .style('left', (event.pageX + 15) + 'px')
+            .style('top', (event.pageY - 35) + 'px');
+        }
       })
       .on('mouseout', function() {
         d3.select(this)
           .transition()
           .duration(200)
           .attr('transform', 'translate(0,0)');
+
+        // Hide tooltip
+        if (tooltipRef.current) {
+          tooltipRef.current.transition().duration(200).style('opacity', 0);
+        }
       });
 
     // Update labels if enabled
@@ -179,33 +224,122 @@ export function D3RealtimePieChart({
       // Compute total for percentage calculation
       const total = d3.sum(data, d => d[valueKey]);
 
-      // Update labels with data join
-      const labels = labelsGroup.selectAll('text')
-        .data(pieData, (d: any) => d.data[nameKey]);
+      if (labelStyle === 'outside') {
+        // Create outer arc for label positioning
+        const outerArc = d3.arc<any>()
+          .innerRadius(radius * 1.2)
+          .outerRadius(radius * 1.2);
 
-      // Exit - remove old labels
-      labels.exit().remove();
-
-      // Update - existing labels without transition
-      labels
-        .attr('transform', (d: any) => `translate(${labelArc.centroid(d)})`)
-        .text((d: any) => {
-          const percentage = ((d.data[valueKey] / total) * 100).toFixed(1);
-          return `${d.data[nameKey]}: ${percentage}%`;
+        // Filter data to show labels only for significant slices
+        const labelData = pieData.filter(d => {
+          const percentage = (d.data[valueKey] / total) * 100;
+          return percentage >= labelThreshold;
         });
 
-      // Enter - add new labels
-      const newLabels = labels.enter()
-        .append('text')
-        .attr('text-anchor', 'middle')
-        .style('fill', 'black')
-        .style('font-size', '12px')
-        .style('font-weight', 'bold')
-        .attr('transform', (d: any) => `translate(${labelArc.centroid(d)})`)
-        .text((d: any) => {
-          const percentage = ((d.data[valueKey] / total) * 100).toFixed(1);
-          return `${d.data[nameKey]}: ${percentage}%`;
+        // Update polylines
+        const polylines = slicesGroup.selectAll('.polyline')
+          .data(labelData, (d: any) => d.data[nameKey]);
+
+        polylines.exit().remove();
+
+        polylines
+          .attr('points', function(d: any) {
+            const posA = arc.centroid(d);
+            const posB = outerArc.centroid(d);
+            const posC = outerArc.centroid(d);
+            const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+            posC[0] = radius * 1.35 * (midangle < Math.PI ? 1 : -1);
+            return [posA, posB, posC].map(p => p.join(',')).join(' ');
+          });
+
+        const newPolylines = polylines.enter()
+          .append('polyline')
+          .attr('class', 'polyline')
+          .attr('points', function(d: any) {
+            const posA = arc.centroid(d);
+            const posB = outerArc.centroid(d);
+            const posC = outerArc.centroid(d);
+            const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+            posC[0] = radius * 1.35 * (midangle < Math.PI ? 1 : -1);
+            return [posA, posB, posC].map(p => p.join(',')).join(' ');
+          })
+          .style('fill', 'none')
+          .style('stroke', '#666')
+          .style('stroke-width', 1)
+          .style('opacity', 0.7);
+
+        // Update labels
+        const labels = labelsGroup.selectAll('text')
+          .data(labelData, (d: any) => d.data[nameKey]);
+
+        labels.exit().remove();
+
+        labels
+          .attr('transform', function(d: any) {
+            const pos = outerArc.centroid(d);
+            const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+            pos[0] = radius * 1.4 * (midangle < Math.PI ? 1 : -1);
+            return `translate(${pos})`;
+          })
+          .style('text-anchor', function(d: any) {
+            const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+            return midangle < Math.PI ? 'start' : 'end';
+          })
+          .text((d: any) => {
+            const percentage = ((d.data[valueKey] / total) * 100).toFixed(1);
+            return `${d.data[nameKey]} (${percentage}%)`;
+          });
+
+        const newLabels = labels.enter()
+          .append('text')
+          .attr('transform', function(d: any) {
+            const pos = outerArc.centroid(d);
+            const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+            pos[0] = radius * 1.4 * (midangle < Math.PI ? 1 : -1);
+            return `translate(${pos})`;
+          })
+          .style('text-anchor', function(d: any) {
+            const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+            return midangle < Math.PI ? 'start' : 'end';
+          })
+          .style('fill', '#333')
+          .style('font-size', '11px')
+          .style('font-weight', 'normal')
+          .text((d: any) => {
+            const percentage = ((d.data[valueKey] / total) * 100).toFixed(1);
+            return `${d.data[nameKey]} (${percentage}%)`;
+          });
+      } else {
+        // Inside labels with threshold
+        const labelData = pieData.filter(d => {
+          const percentage = (d.data[valueKey] / total) * 100;
+          return percentage >= labelThreshold;
         });
+
+        const labels = labelsGroup.selectAll('text')
+          .data(labelData, (d: any) => d.data[nameKey]);
+
+        labels.exit().remove();
+
+        labels
+          .attr('transform', (d: any) => `translate(${labelArc.centroid(d)})`)
+          .text((d: any) => {
+            const percentage = ((d.data[valueKey] / total) * 100).toFixed(1);
+            return `${percentage}%`;
+          });
+
+        const newLabels = labels.enter()
+          .append('text')
+          .attr('text-anchor', 'middle')
+          .style('fill', 'white')
+          .style('font-size', '11px')
+          .style('font-weight', 'bold')
+          .attr('transform', (d: any) => `translate(${labelArc.centroid(d)})`)
+          .text((d: any) => {
+            const percentage = ((d.data[valueKey] / total) * 100).toFixed(1);
+            return `${percentage}%`;
+          });
+      }
     }
 
     // Update legend if enabled
@@ -263,7 +397,7 @@ export function D3RealtimePieChart({
     // Store current data for comparison
     previousDataRef.current = [...data];
 
-  }, [data, valueKey, nameKey, showLabels, showLegend, transitionDuration]);
+  }, [data, valueKey, nameKey, showLabels, showLegend, transitionDuration, formatValue, labelThreshold, labelStyle]);
 
   // Update chart when data changes
   useEffect(() => {
@@ -321,6 +455,16 @@ export function D3RealtimePieChart({
       }
     };
   }, [width, height, innerRadius, showLegend, updateChart]);
+
+  // Cleanup tooltip on unmount
+  useEffect(() => {
+    return () => {
+      if (tooltipRef.current) {
+        tooltipRef.current.remove();
+        tooltipRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <div ref={containerRef} style={{ width: '100%', maxWidth: width }}>

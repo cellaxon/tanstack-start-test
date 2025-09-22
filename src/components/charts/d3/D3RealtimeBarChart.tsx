@@ -13,6 +13,8 @@ interface D3RealtimeBarChartProps {
   maxDataPoints?: number;
   transitionDuration?: number;
   maintainYScale?: boolean;
+  yLabel?: string;
+  formatValue?: (value: number) => string;
 }
 
 export function D3RealtimeBarChart({
@@ -26,13 +28,16 @@ export function D3RealtimeBarChart({
   showGrid = true,
   maxDataPoints = 20,
   transitionDuration = 500,
-  maintainYScale = false
+  maintainYScale = false,
+  yLabel,
+  formatValue = (v) => v.toFixed(2)
 }: D3RealtimeBarChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<any>({});
   const maxYValueRef = useRef<number>(0);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const tooltipRef = useRef<any>(null);
 
   // Initialize chart once
   useEffect(() => {
@@ -86,6 +91,35 @@ export function D3RealtimeBarChart({
     const barsGroup = g.append('g')
       .attr('class', 'bars');
 
+    // Y axis label
+    if (yLabel && layout === 'vertical') {
+      g.append('text')
+        .attr('transform', 'rotate(-90)')
+        .attr('y', 0 - margin.left)
+        .attr('x', 0 - (innerHeight / 2))
+        .attr('dy', '1em')
+        .style('text-anchor', 'middle')
+        .style('font-size', '12px')
+        .style('fill', '#666')
+        .text(yLabel);
+    }
+
+    // Tooltip
+    if (!tooltipRef.current) {
+      tooltipRef.current = d3.select('body').append('div')
+        .attr('class', 'chart-tooltip-realtime-bar')
+        .style('position', 'absolute')
+        .style('opacity', 0)
+        .style('background', 'rgba(0, 0, 0, 0.9)')
+        .style('color', 'white')
+        .style('padding', '10px')
+        .style('border-radius', '6px')
+        .style('font-size', '12px')
+        .style('pointer-events', 'none')
+        .style('box-shadow', '0 4px 6px rgba(0, 0, 0, 0.1)')
+        .style('z-index', '1000');
+    }
+
     // Store references
     chartRef.current = {
       ...chartRef.current,
@@ -98,7 +132,7 @@ export function D3RealtimeBarChart({
       innerHeight
     };
 
-  }, [width, height, layout, showGrid]);
+  }, [width, height, layout, showGrid, yLabel]);
 
   // Update chart with new data
   const updateChart = useCallback(() => {
@@ -193,7 +227,7 @@ export function D3RealtimeBarChart({
         .attr('fill', (d, i) => Array.isArray(color) ? color[i % color.length] : color);
 
       // Enter - add new bars with transition
-      bars.enter()
+      const newBars = bars.enter()
         .append('rect')
         .attr('class', 'bar')
         .attr('x', d => xScale(d[xKey]) as number)
@@ -202,11 +236,52 @@ export function D3RealtimeBarChart({
         .attr('height', 0)
         .attr('fill', (d, i) => Array.isArray(color) ? color[i % color.length] : color)
         .style('opacity', 0.8)
+        .style('cursor', 'pointer');
+
+      newBars
         .transition()
         .duration(transitionDuration)
         .attr('y', d => yScale(d[yKey]))
         .attr('height', d => innerHeight - yScale(d[yKey]))
         .style('opacity', 1);
+
+      // Add mouse events to all bars
+      barsGroup.selectAll('.bar')
+        .on('mouseover', function(event, d: any) {
+          // Highlight the bar
+          d3.select(this)
+            .transition()
+            .duration(100)
+            .style('opacity', 1)
+            .attr('filter', 'brightness(1.2)');
+
+          // Show tooltip
+          if (tooltipRef.current) {
+            const value = formatValue(d[yKey]);
+            const label = d[xKey];
+
+            tooltipRef.current.transition().duration(100).style('opacity', 0.95);
+            tooltipRef.current.html(`
+              <div style="font-weight: bold; margin-bottom: 5px;">${label}</div>
+              <div style="color: ${Array.isArray(color) ? color[0] : color}">● ${yLabel || yKey}: ${value}</div>
+            `)
+              .style('left', (event.pageX + 15) + 'px')
+              .style('top', (event.pageY - 35) + 'px');
+          }
+        })
+        .on('mouseout', function() {
+          // Remove highlight
+          d3.select(this)
+            .transition()
+            .duration(100)
+            .style('opacity', 1)
+            .attr('filter', 'none');
+
+          // Hide tooltip
+          if (tooltipRef.current) {
+            tooltipRef.current.transition().duration(200).style('opacity', 0);
+          }
+        });
 
     } else {
       // Horizontal bar chart
@@ -272,7 +347,7 @@ export function D3RealtimeBarChart({
         .attr('fill', (d, i) => Array.isArray(color) ? color[i % color.length] : color);
 
       // Enter - add new bars with transition
-      bars.enter()
+      const newBars = bars.enter()
         .append('rect')
         .attr('class', 'bar')
         .attr('y', d => yScale(d[xKey]) as number)
@@ -281,13 +356,54 @@ export function D3RealtimeBarChart({
         .attr('width', 0)
         .attr('fill', (d, i) => Array.isArray(color) ? color[i % color.length] : color)
         .style('opacity', 0.8)
+        .style('cursor', 'pointer');
+
+      newBars
         .transition()
         .duration(transitionDuration)
         .attr('width', d => xScale(d[yKey]))
         .style('opacity', 1);
+
+      // Add mouse events to all bars
+      barsGroup.selectAll('.bar')
+        .on('mouseover', function(event, d: any) {
+          // Highlight the bar
+          d3.select(this)
+            .transition()
+            .duration(100)
+            .style('opacity', 1)
+            .attr('filter', 'brightness(1.2)');
+
+          // Show tooltip
+          if (tooltipRef.current) {
+            const value = formatValue(d[yKey]);
+            const label = d[xKey];
+
+            tooltipRef.current.transition().duration(100).style('opacity', 0.95);
+            tooltipRef.current.html(`
+              <div style="font-weight: bold; margin-bottom: 5px;">${label}</div>
+              <div style="color: ${Array.isArray(color) ? color[0] : color}">● ${yLabel || yKey}: ${value}</div>
+            `)
+              .style('left', (event.pageX + 15) + 'px')
+              .style('top', (event.pageY - 35) + 'px');
+          }
+        })
+        .on('mouseout', function() {
+          // Remove highlight
+          d3.select(this)
+            .transition()
+            .duration(100)
+            .style('opacity', 1)
+            .attr('filter', 'none');
+
+          // Hide tooltip
+          if (tooltipRef.current) {
+            tooltipRef.current.transition().duration(200).style('opacity', 0);
+          }
+        });
     }
 
-  }, [data, xKey, yKey, color, layout, maxDataPoints, transitionDuration, maintainYScale]);
+  }, [data, xKey, yKey, color, layout, maxDataPoints, transitionDuration, maintainYScale, yLabel, formatValue]);
 
   // Update chart when data changes
   useEffect(() => {
@@ -339,6 +455,16 @@ export function D3RealtimeBarChart({
       }
     };
   }, [width, layout, updateChart]);
+
+  // Cleanup tooltip on unmount
+  useEffect(() => {
+    return () => {
+      if (tooltipRef.current) {
+        tooltipRef.current.remove();
+        tooltipRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <div ref={containerRef} style={{ width: '100%', maxWidth: width }}>

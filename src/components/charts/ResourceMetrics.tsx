@@ -154,6 +154,8 @@ export function ResourceMetrics() {
               colors={['#3b82f6']}
               maxDataPoints={50}
               transitionDuration={300}
+              yLabels={{ usage: 'CPU 사용률' }}
+              formatValue={(v) => `${v.toFixed(1)}%`}
             />
           </CardContent>
         </Card>
@@ -173,6 +175,8 @@ export function ResourceMetrics() {
               color="#8b5cf6"
               maxDataPoints={50}
               transitionDuration={300}
+              yLabel="메모리 (GB)"
+              formatValue={(v) => `${v.toFixed(1)}GB`}
             />
           </CardContent>
         </Card>
@@ -193,6 +197,9 @@ export function ResourceMetrics() {
               stacked={true}
               maxDataPoints={50}
               transitionDuration={300}
+              yLabels={{ active: '활성', idle: '유휴', waiting: '대기' }}
+              formatValue={(v) => `${v}개`}
+              showLegend={true}
             />
           </CardContent>
         </Card>

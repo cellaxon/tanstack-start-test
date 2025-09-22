@@ -11,6 +11,8 @@ interface D3PieChartProps {
   innerRadius?: number;
   showLabels?: boolean;
   animate?: boolean;
+  labelThreshold?: number; // 최소 표시 비율 (%)
+  labelStyle?: 'inside' | 'outside'; // 레이블 스타일
 }
 
 export function D3PieChart({
@@ -22,7 +24,9 @@ export function D3PieChart({
   colors = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'],
   innerRadius = 0,
   showLabels = true,
-  animate = true
+  animate = true,
+  labelThreshold = 5, // 5% 이하는 레이블 숨김
+  labelStyle = 'outside'
 }: D3PieChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -133,36 +137,117 @@ export function D3PieChart({
 
     // Add labels
     if (showLabels) {
-      const labels = arcs.append('text')
-        .attr('transform', (d: any) => `translate(${labelArc.centroid(d)})`)
-        .attr('text-anchor', 'middle')
-        .style('fill', 'black')
-        .style('font-size', '12px')
-        .style('font-weight', 'bold');
+      const total = d3.sum(data, (item: any) => item[valueKey]);
 
-      if (animate) {
-        labels
-          .style('opacity', 0)
-          .transition()
-          .delay(800)
-          .duration(200)
-          .style('opacity', 1)
-          .text((d: any) => {
-            const percentage = ((d.data[valueKey] / d3.sum(data, (item: any) => item[valueKey])) * 100).toFixed(1);
-            return `${d.data[nameKey]}: ${percentage}%`;
-          });
-      } else {
-        labels.text((d: any) => {
-          const percentage = ((d.data[valueKey] / d3.sum(data, (item: any) => item[valueKey])) * 100).toFixed(1);
-          return `${d.data[nameKey]}: ${percentage}%`;
+      if (labelStyle === 'outside') {
+        // Create polylines and labels for outside placement
+        const outerArc = d3.arc<any>()
+          .innerRadius(radius * 1.2)
+          .outerRadius(radius * 1.2);
+
+        // Filter data to show labels only for significant slices
+        const labelData = pie(data).filter(d => {
+          const percentage = (d.data[valueKey] / total) * 100;
+          return percentage >= labelThreshold;
         });
+
+        // Add polylines
+        const polylines = g.selectAll('.polyline')
+          .data(labelData)
+          .enter()
+          .append('polyline')
+          .attr('points', function(d: any) {
+            const posA = arc.centroid(d);
+            const posB = outerArc.centroid(d);
+            const posC = outerArc.centroid(d);
+            const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+            posC[0] = radius * 1.35 * (midangle < Math.PI ? 1 : -1);
+            return [posA, posB, posC].map(p => p.join(',')).join(' ');
+          })
+          .style('fill', 'none')
+          .style('stroke', 'black')
+          .style('stroke-width', 1)
+          .style('opacity', animate ? 0 : 0.7);
+
+        // Add labels
+        const labels = g.selectAll('.label')
+          .data(labelData)
+          .enter()
+          .append('text')
+          .attr('transform', function(d: any) {
+            const pos = outerArc.centroid(d);
+            const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+            pos[0] = radius * 1.4 * (midangle < Math.PI ? 1 : -1);
+            return `translate(${pos})`;
+          })
+          .style('text-anchor', function(d: any) {
+            const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+            return midangle < Math.PI ? 'start' : 'end';
+          })
+          .style('fill', 'black')
+          .style('font-size', '11px')
+          .style('font-weight', 'normal')
+          .style('opacity', animate ? 0 : 1)
+          .text((d: any) => {
+            const percentage = ((d.data[valueKey] / total) * 100).toFixed(1);
+            return `${d.data[nameKey]} (${percentage}%)`;
+          });
+
+        if (animate) {
+          polylines
+            .transition()
+            .delay(800)
+            .duration(200)
+            .style('opacity', 0.7);
+
+          labels
+            .transition()
+            .delay(800)
+            .duration(200)
+            .style('opacity', 1);
+        }
+      } else {
+        // Inside labels (original implementation) with threshold
+        const labelData = pie(data).filter(d => {
+          const percentage = (d.data[valueKey] / total) * 100;
+          return percentage >= labelThreshold;
+        });
+
+        const labels = arcs.filter((d: any) => {
+            const percentage = ((d.data[valueKey] / total) * 100);
+            return percentage >= labelThreshold;
+          })
+          .append('text')
+          .attr('transform', (d: any) => `translate(${labelArc.centroid(d)})`)
+          .attr('text-anchor', 'middle')
+          .style('fill', 'white')
+          .style('font-size', '11px')
+          .style('font-weight', 'bold');
+
+        if (animate) {
+          labels
+            .style('opacity', 0)
+            .transition()
+            .delay(800)
+            .duration(200)
+            .style('opacity', 1)
+            .text((d: any) => {
+              const percentage = ((d.data[valueKey] / total) * 100).toFixed(1);
+              return `${percentage}%`;
+            });
+        } else {
+          labels.text((d: any) => {
+            const percentage = ((d.data[valueKey] / total) * 100).toFixed(1);
+            return `${percentage}%`;
+          });
+        }
       }
     }
 
     return () => {
       d3.select('body').selectAll('.tooltip').remove();
     };
-  }, [data, width, height, valueKey, nameKey, colors, innerRadius, showLabels, animate]);
+  }, [data, width, height, valueKey, nameKey, colors, innerRadius, showLabels, animate, labelThreshold, labelStyle]);
 
   return (
     <div ref={containerRef} style={{ width: '100%', maxWidth: width }}>

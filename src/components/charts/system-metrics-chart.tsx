@@ -50,23 +50,31 @@ export function SystemMetricsChart() {
 		};
 
 		if (timeRange === "1m" || timeRange === "5m") {
-			// Show HH:mm:ss format with AM/PM
+			// Show HH:mm:ss format
 			return date.toLocaleTimeString("ko-KR", {
 				...options,
 				hour: "2-digit",
 				minute: "2-digit",
 				second: "2-digit",
-				hour12: true,
+				hour12: false,
 			});
 		}
-		if (timeRange === "1h" || timeRange === "1d") {
-			// Show HH:mm format with AM/PM
+		if (timeRange === "1h") {
+			// Show HH:mm format
 			return date.toLocaleTimeString("ko-KR", {
 				...options,
 				hour: "2-digit",
 				minute: "2-digit",
-				hour12: true,
+				hour12: false,
 			});
+		}
+		if (timeRange === "1d") {
+			// Show HH시 format for hourly averages
+			return date.toLocaleTimeString("ko-KR", {
+				...options,
+				hour: "numeric",
+				hour12: false,
+			}) + "시";
 		}
 		if (timeRange === "1w") {
 			// Show MM/DD HH시 format
@@ -93,7 +101,18 @@ export function SystemMetricsChart() {
 				.replace(/\. /g, "/")
 				.replace(/\./g, "");
 		}
-		// Show YYYY-MM-DD format
+		// Show MM/DD format for yearly
+		if (timeRange === "1y") {
+			return date
+				.toLocaleDateString("ko-KR", {
+					...options,
+					month: "numeric",
+					day: "numeric",
+				})
+				.replace(/\. /g, "/")
+				.replace(/\./g, "");
+		}
+		// Default format
 		return date
 			.toLocaleDateString("ko-KR", {
 				...options,
@@ -105,10 +124,12 @@ export function SystemMetricsChart() {
 			.replace(/\./g, "");
 	};
 
-	// Sort data by timestamp (oldest first for proper chart display)
-	const sortedData = [...(metricsQuery.data || [])].sort(
-		(a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-	);
+	// Backend now handles aggregation, just sort the data
+	const sortedData = metricsQuery.data
+		? [...metricsQuery.data].sort(
+			(a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+		)
+		: [];
 
 	return (
 		<div className="space-y-4">

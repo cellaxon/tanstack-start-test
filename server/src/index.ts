@@ -11,6 +11,7 @@ import dashboardRouter from './routes/dashboard.js';
 import metricsRouter from './routes/metrics.js';
 import proxyRouter from './routes/proxy.js';
 import { startMonitoring } from './services/monitoring.js';
+import { metricsAggregator } from './services/metricsAggregator.js';
 import { swaggerSpec } from './swagger.js';
 import { setupWebSocketServer } from './websocket.js';
 
@@ -83,6 +84,9 @@ server.listen(PORT, () => {
 
   // Start system monitoring
   startMonitoring();
+
+  // Start metrics aggregation service
+  metricsAggregator.start();
 });
 
 export default app;

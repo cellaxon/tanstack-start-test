@@ -134,14 +134,18 @@ export function ErrorTracking() {
             <CardTitle>HTTP 상태 코드 분포</CardTitle>
             <CardDescription>응답 코드별 분포</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex items-center justify-center">
             <D3RealtimePieChart
               data={statusCodeData}
+              width={350}
               height={300}
               valueKey="value"
               nameKey="name"
               colors={Object.values(STATUS_COLORS)}
+              innerRadius={60}
               transitionDuration={750}
+              showLegend={false}
+              labelStyle="outside"
             />
           </CardContent>
         </Card>

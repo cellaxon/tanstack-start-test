@@ -10,8 +10,11 @@ interface D3RealtimeAreaChartProps {
   colors?: string[];
   stacked?: boolean;
   showGrid?: boolean;
+  showLegend?: boolean;
   maxDataPoints?: number;
   transitionDuration?: number;
+  yLabels?: { [key: string]: string };
+  formatValue?: (value: number) => string;
 }
 
 export function D3RealtimeAreaChart({
@@ -23,14 +26,18 @@ export function D3RealtimeAreaChart({
   colors = ['#10b981', '#f59e0b', '#ef4444'],
   stacked = false,
   showGrid = true,
+  showLegend = false,
   maxDataPoints = 50,
-  transitionDuration = 500
+  transitionDuration = 500,
+  yLabels = {},
+  formatValue = (v) => v.toFixed(2)
 }: D3RealtimeAreaChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<any>({});
   const previousDataRef = useRef<any[]>([]);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const tooltipRef = useRef<any>(null);
 
   // Initialize chart once
   useEffect(() => {
@@ -101,6 +108,84 @@ export function D3RealtimeAreaChart({
     const areasGroup = g.append('g')
       .attr('clip-path', 'url(#clip-area)');
 
+    // Crosshair group
+    const crosshair = g.append('g')
+      .attr('class', 'crosshair')
+      .style('display', 'none');
+
+    // Vertical line
+    crosshair.append('line')
+      .attr('class', 'crosshair-x')
+      .attr('y1', 0)
+      .attr('y2', innerHeight)
+      .style('stroke', '#999')
+      .style('stroke-width', 1)
+      .style('stroke-dasharray', '3,3')
+      .style('opacity', 0.7);
+
+    // Focus circles container
+    const focusCirclesGroup = g.append('g')
+      .attr('class', 'focus-circles')
+      .style('display', 'none');
+
+    // Create focus circles for each series
+    const focusCircles = yKeys.map((key, i) => {
+      return focusCirclesGroup.append('circle')
+        .attr('class', `focus-circle-${i}`)
+        .attr('r', 5)
+        .attr('fill', colors[i % colors.length])
+        .attr('stroke', 'white')
+        .attr('stroke-width', 2);
+    });
+
+    // Tooltip
+    if (!tooltipRef.current) {
+      tooltipRef.current = d3.select('body').append('div')
+        .attr('class', 'chart-tooltip-realtime-area')
+        .style('position', 'absolute')
+        .style('opacity', 0)
+        .style('background', 'rgba(0, 0, 0, 0.9)')
+        .style('color', 'white')
+        .style('padding', '10px')
+        .style('border-radius', '6px')
+        .style('font-size', '12px')
+        .style('pointer-events', 'none')
+        .style('box-shadow', '0 4px 6px rgba(0, 0, 0, 0.1)')
+        .style('z-index', '1000');
+    }
+
+    // Invisible rect for mouse events
+    const mouseRect = g.append('rect')
+      .attr('class', 'mouse-overlay')
+      .attr('width', innerWidth)
+      .attr('height', innerHeight)
+      .style('fill', 'none')
+      .style('pointer-events', 'all');
+
+    // Legend
+    if (showLegend) {
+      const legend = g.append('g')
+        .attr('font-family', 'sans-serif')
+        .attr('font-size', 10)
+        .attr('text-anchor', 'end')
+        .selectAll('g')
+        .data(yKeys.slice().reverse())
+        .enter().append('g')
+        .attr('transform', (d, i) => `translate(0,${i * 20})`);
+
+      legend.append('rect')
+        .attr('x', innerWidth - 19)
+        .attr('width', 19)
+        .attr('height', 19)
+        .attr('fill', (d, i) => colors[yKeys.length - 1 - i]);
+
+      legend.append('text')
+        .attr('x', innerWidth - 24)
+        .attr('y', 9.5)
+        .attr('dy', '0.32em')
+        .text(d => yLabels[d] || d);
+    }
+
     // Store references
     chartRef.current = {
       svg,
@@ -115,10 +200,14 @@ export function D3RealtimeAreaChart({
       innerWidth,
       innerHeight,
       gridX: chartRef.current.gridX,
-      gridY: chartRef.current.gridY
+      gridY: chartRef.current.gridY,
+      crosshair,
+      focusCirclesGroup,
+      focusCircles,
+      mouseRect
     };
 
-  }, [width, height, showGrid]);
+  }, [width, height, showGrid, showLegend, yKeys, colors, yLabels]);
 
   // Update chart with new data
   const updateChart = useCallback(() => {
@@ -280,10 +369,100 @@ export function D3RealtimeAreaChart({
         .tickFormat(() => ''));
     }
 
+    // Update mouse interactions
+    const { crosshair, focusCirclesGroup, focusCircles, mouseRect } = chartRef.current;
+
+    if (mouseRect && crosshair && focusCirclesGroup) {
+      const bisector = d3.bisector((d: any) => new Date(d[xKey])).left;
+
+      mouseRect
+        .on('mousemove', function(event) {
+          if (limitedData.length === 0) return;
+
+          const [mouseX] = d3.pointer(event);
+          const x0 = xScale.invert(mouseX);
+          const index = bisector(limitedData, x0, 1);
+          const d0 = limitedData[index - 1];
+          const d1 = limitedData[index];
+
+          if (!d0 && !d1) return;
+          let d: any;
+          if (!d0) d = d1;
+          else if (!d1) d = d0;
+          else {
+            d = x0.getTime() - new Date(d0[xKey]).getTime() > new Date(d1[xKey]).getTime() - x0.getTime() ? d1 : d0;
+          }
+
+          if (d) {
+            const xPos = xScale(new Date(d[xKey]));
+
+            // Update crosshair
+            crosshair.style('display', null);
+            crosshair.select('.crosshair-x')
+              .attr('x1', xPos)
+              .attr('x2', xPos);
+
+            // Update focus circles for each series
+            focusCirclesGroup.style('display', null);
+
+            if (stacked) {
+              // For stacked charts, calculate cumulative y values
+              let cumulativeY = 0;
+              yKeys.forEach((key, i) => {
+                cumulativeY += d[key];
+                const yPos = yScale(cumulativeY);
+                if (focusCircles[i]) {
+                  focusCircles[i]
+                    .attr('cx', xPos)
+                    .attr('cy', yPos);
+                }
+              });
+            } else {
+              // For non-stacked charts
+              yKeys.forEach((key, i) => {
+                const yPos = yScale(d[key]);
+                if (focusCircles[i]) {
+                  focusCircles[i]
+                    .attr('cx', xPos)
+                    .attr('cy', yPos);
+                }
+              });
+            }
+
+            // Update tooltip
+            const timeStr = new Date(d[xKey]).toLocaleTimeString('ko-KR', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit'
+            });
+
+            if (tooltipRef.current) {
+              let tooltipHtml = `<div style="font-weight: bold; margin-bottom: 5px;">${timeStr}</div>`;
+              yKeys.forEach((key, i) => {
+                const label = yLabels[key] || key;
+                tooltipHtml += `<div style="color: ${colors[i % colors.length]}">● ${label}: ${formatValue(d[key])}</div>`;
+              });
+
+              tooltipRef.current.transition().duration(100).style('opacity', 0.95);
+              tooltipRef.current.html(tooltipHtml)
+                .style('left', (event.pageX + 15) + 'px')
+                .style('top', (event.pageY - 35) + 'px');
+            }
+          }
+        })
+        .on('mouseout', () => {
+          crosshair.style('display', 'none');
+          focusCirclesGroup.style('display', 'none');
+          if (tooltipRef.current) {
+            tooltipRef.current.transition().duration(200).style('opacity', 0);
+          }
+        });
+    }
+
     // Store current data for next update
     previousDataRef.current = [...limitedData];
 
-  }, [data, xKey, yKeys, colors, stacked, maxDataPoints, transitionDuration]);
+  }, [data, xKey, yKeys, colors, stacked, maxDataPoints, transitionDuration, yLabels, formatValue]);
 
   // Update chart when data changes
   useEffect(() => {
@@ -331,6 +510,16 @@ export function D3RealtimeAreaChart({
       }
     };
   }, [width, updateChart]);
+
+  // Cleanup tooltip on unmount
+  useEffect(() => {
+    return () => {
+      if (tooltipRef.current) {
+        tooltipRef.current.remove();
+        tooltipRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <div ref={containerRef} style={{ width: '100%', maxWidth: width }}>
