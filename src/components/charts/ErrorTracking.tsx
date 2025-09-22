@@ -7,23 +7,9 @@ import {
 } from '@/components/ui/card';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { AlertCircle, CheckCircle, XCircle } from 'lucide-react';
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { D3RealtimeAreaChart } from './d3/D3RealtimeAreaChart';
+import { D3RealtimeBarChart } from './d3/D3RealtimeBarChart';
+import { D3RealtimePieChart } from './d3/D3RealtimePieChart';
 
 const STATUS_COLORS = {
   '2xx': '#10b981',
@@ -39,7 +25,7 @@ export function ErrorTracking() {
 
   // Format error rate over time
   const errorRateData = errorData.map(item => ({
-    time: new Date(item.timestamp).toLocaleTimeString(),
+    time: item.timestamp,
     errorRate: parseFloat(item.errorRate),
     totalErrors: item.totalErrors,
   }));
@@ -59,7 +45,6 @@ export function ErrorTracking() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold mb-4">가용성 및 에러 추적</h2>
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -131,21 +116,16 @@ export function ErrorTracking() {
             <CardDescription>시간대별 에러율 변화</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={errorRateData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="time" />
-                <YAxis />
-                <Tooltip />
-                <Area
-                  type="monotone"
-                  dataKey="errorRate"
-                  stroke="#ef4444"
-                  fill="#ef4444"
-                  fillOpacity={0.3}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <D3RealtimeAreaChart
+              data={errorRateData}
+              width={500}
+              height={300}
+              xKey="time"
+              yKeys={['errorRate']}
+              colors={['#ef4444']}
+              maxDataPoints={50}
+              transitionDuration={300}
+            />
           </CardContent>
         </Card>
 
@@ -156,25 +136,15 @@ export function ErrorTracking() {
             <CardDescription>응답 코드별 분포</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={statusCodeData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {statusCodeData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <D3RealtimePieChart
+              data={statusCodeData}
+              width={400}
+              height={300}
+              valueKey="value"
+              nameKey="name"
+              colors={Object.values(STATUS_COLORS)}
+              transitionDuration={750}
+            />
           </CardContent>
         </Card>
 
@@ -185,15 +155,19 @@ export function ErrorTracking() {
             <CardDescription>시간대별 에러 발생 건수</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={errorRateData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="time" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="totalErrors" fill="#ef4444" />
-              </BarChart>
-            </ResponsiveContainer>
+            <D3RealtimeBarChart
+              data={errorRateData.map(item => ({
+                ...item,
+                time: new Date(item.time).toLocaleTimeString()
+              }))}
+              width={500}
+              height={300}
+              xKey="time"
+              yKey="totalErrors"
+              color="#dc2626"
+              maxDataPoints={20}
+              transitionDuration={500}
+            />
           </CardContent>
         </Card>
 

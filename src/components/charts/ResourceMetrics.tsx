@@ -8,20 +8,8 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { Activity, Cpu, Database, HardDrive, Network, Server } from 'lucide-react';
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { D3RealtimeAreaChart } from './d3/D3RealtimeAreaChart';
+import { D3RealtimeLineChart } from './d3/D3RealtimeLineChart';
 
 export function ResourceMetrics() {
   const { resourceData } = useWebSocket();
@@ -30,20 +18,20 @@ export function ResourceMetrics() {
 
   // Format CPU usage over time
   const cpuData = resourceData.map(item => ({
-    time: new Date(item.timestamp).toLocaleTimeString(),
+    time: item.timestamp,
     usage: parseFloat(item.cpu.usage),
   }));
 
   // Format memory usage over time
   const memoryData = resourceData.map(item => ({
-    time: new Date(item.timestamp).toLocaleTimeString(),
+    time: item.timestamp,
     used: parseFloat(item.memory.used),
     percentage: parseFloat(item.memory.percentage),
   }));
 
   // Format connection pool data
   const connectionData = resourceData.map(item => ({
-    time: new Date(item.timestamp).toLocaleTimeString(),
+    time: item.timestamp,
     active: item.connectionPool.active,
     idle: item.connectionPool.idle,
     waiting: item.connectionPool.waiting,
@@ -51,7 +39,7 @@ export function ResourceMetrics() {
 
   // Format network data
   const networkData = resourceData.map(item => ({
-    time: new Date(item.timestamp).toLocaleTimeString(),
+    time: item.timestamp,
     inbound: parseFloat(item.network.inbound),
     outbound: parseFloat(item.network.outbound),
   }));
@@ -70,7 +58,6 @@ export function ResourceMetrics() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold mb-4">리소스 및 성능 지표</h2>
 
       {/* Resource Overview Cards */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -159,21 +146,16 @@ export function ResourceMetrics() {
             <CardDescription>시간대별 CPU 사용률</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={cpuData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="time" />
-                <YAxis domain={[0, 100]} />
-                <Tooltip />
-                <Area
-                  type="monotone"
-                  dataKey="usage"
-                  stroke="#3b82f6"
-                  fill="#3b82f6"
-                  fillOpacity={0.3}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <D3RealtimeAreaChart
+              data={cpuData}
+              width={500}
+              height={300}
+              xKey="time"
+              yKeys={['usage']}
+              colors={['#3b82f6']}
+              maxDataPoints={50}
+              transitionDuration={300}
+            />
           </CardContent>
         </Card>
 
@@ -184,33 +166,16 @@ export function ResourceMetrics() {
             <CardDescription>시간대별 메모리 사용량</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={memoryData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="time" />
-                <YAxis yAxisId="left" />
-                <YAxis yAxisId="right" orientation="right" domain={[0, 100]} />
-                <Tooltip />
-                <Legend />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="used"
-                  stroke="#8b5cf6"
-                  strokeWidth={2}
-                  name="사용량 (GB)"
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="percentage"
-                  stroke="#ec4899"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  name="사용률 (%)"
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <D3RealtimeLineChart
+              data={memoryData}
+              width={500}
+              height={300}
+              xKey="time"
+              yKey="used"
+              color="#8b5cf6"
+              maxDataPoints={50}
+              transitionDuration={300}
+            />
           </CardContent>
         </Card>
 
@@ -221,18 +186,17 @@ export function ResourceMetrics() {
             <CardDescription>데이터베이스 연결 상태</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={connectionData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="time" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Area type="monotone" dataKey="active" stackId="1" stroke="#10b981" fill="#10b981" name="활성" />
-                <Area type="monotone" dataKey="idle" stackId="1" stroke="#f59e0b" fill="#f59e0b" name="유휴" />
-                <Area type="monotone" dataKey="waiting" stackId="1" stroke="#ef4444" fill="#ef4444" name="대기" />
-              </AreaChart>
-            </ResponsiveContainer>
+            <D3RealtimeAreaChart
+              data={connectionData}
+              width={500}
+              height={300}
+              xKey="time"
+              yKeys={['active', 'idle', 'waiting']}
+              colors={['#10b981', '#f59e0b', '#ef4444']}
+              stacked={true}
+              maxDataPoints={50}
+              transitionDuration={300}
+            />
           </CardContent>
         </Card>
 
@@ -243,17 +207,16 @@ export function ResourceMetrics() {
             <CardDescription>인바운드/아웃바운드 트래픽</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={networkData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="time" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="inbound" stroke="#06b6d4" strokeWidth={2} name="인바운드" />
-                <Line type="monotone" dataKey="outbound" stroke="#f97316" strokeWidth={2} name="아웃바운드" />
-              </LineChart>
-            </ResponsiveContainer>
+            <D3RealtimeLineChart
+              data={networkData}
+              width={500}
+              height={300}
+              xKey="time"
+              yKey="inbound"
+              color="#06b6d4"
+              maxDataPoints={50}
+              transitionDuration={300}
+            />
           </CardContent>
         </Card>
       </div>

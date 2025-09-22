@@ -9,19 +9,8 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import { apiClient } from '@/lib/api-client';
 import { CheckCircle, TrendingDown, TrendingUp, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { D3RealtimeBarChart } from './d3/D3RealtimeBarChart';
+import { D3RealtimeLineChart } from './d3/D3RealtimeLineChart';
 
 interface ApiUsageData {
   timestamp: Date;
@@ -92,7 +81,6 @@ export function BusinessMetrics() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold mb-4">비즈니스 메트릭 및 SLA</h2>
 
       {/* SLA Overview */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -164,19 +152,17 @@ export function BusinessMetrics() {
             <CardDescription>24시간 기준 가장 많이 호출된 API</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={apiUsageChartData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={150} />
-                <Tooltip />
-                <Bar dataKey="calls" fill="#3b82f6">
-                  {apiUsageChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={index < 3 ? '#3b82f6' : '#93c5fd'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <D3RealtimeBarChart
+              data={apiUsageChartData}
+              width={500}
+              height={400}
+              xKey="name"
+              yKey="calls"
+              color={apiUsageChartData.map((_, index) => index < 3 ? '#3b82f6' : '#93c5fd')}
+              layout="horizontal"
+              maxDataPoints={10}
+              transitionDuration={500}
+            />
           </CardContent>
         </Card>
 
@@ -227,32 +213,16 @@ export function BusinessMetrics() {
             <CardDescription>평균 응답 시간 및 에러율</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={apiUsageChartData.slice(0, 5)}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-                <YAxis yAxisId="left" />
-                <YAxis yAxisId="right" orientation="right" />
-                <Tooltip />
-                <Legend />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="avgTime"
-                  stroke="#3b82f6"
-                  strokeWidth={2}
-                  name="평균 응답시간(ms)"
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="errorRate"
-                  stroke="#ef4444"
-                  strokeWidth={2}
-                  name="에러율(%)"
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <D3RealtimeBarChart
+              data={apiUsageChartData.slice(0, 5)}
+              width={500}
+              height={300}
+              xKey="name"
+              yKey="avgTime"
+              color="#3b82f6"
+              maxDataPoints={5}
+              transitionDuration={500}
+            />
           </CardContent>
         </Card>
 

@@ -1,10 +1,11 @@
-import { BankingDashboard } from '@/components/BankingDashboard';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/banking')({
-  component: BankingPage,
+  beforeLoad: () => {
+    // Redirect to dashboard with banking tab active
+    throw redirect({
+      to: '/dashboard',
+      search: { tab: 'banking' },
+    });
+  },
 });
-
-function BankingPage() {
-  return <BankingDashboard />;
-}

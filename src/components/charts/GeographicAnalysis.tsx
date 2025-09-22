@@ -8,19 +8,8 @@ import {
 import { apiClient } from '@/lib/api-client';
 import { Globe, Monitor, Smartphone, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { D3RealtimeBarChart } from './d3/D3RealtimeBarChart';
+import { D3RealtimePieChart } from './d3/D3RealtimePieChart';
 
 interface GeographicData {
   timestamp: Date;
@@ -107,7 +96,6 @@ export function GeographicAnalysis() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold mb-4">지리적 분포 및 클라이언트 분석</h2>
 
       {/* Geographic Distribution */}
       <div className="grid gap-4 md:grid-cols-2">
@@ -149,19 +137,16 @@ export function GeographicAnalysis() {
               {/* Regional traffic chart */}
               <div>
                 <h3 className="text-sm font-medium mb-3">지역별 요청 비율</h3>
-                <ResponsiveContainer width="100%" height={350}>
-                  <BarChart data={sortedRegions}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="region" angle={-45} textAnchor="end" height={80} />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="requests" fill="#3b82f6">
-                      {sortedRegions.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <D3RealtimeBarChart
+                  data={sortedRegions}
+                  width={500}
+                  height={350}
+                  xKey="region"
+                  yKey="requests"
+                  color={COLORS}
+                  maxDataPoints={10}
+                  transitionDuration={500}
+                />
               </div>
             </div>
           </CardContent>
@@ -174,25 +159,15 @@ export function GeographicAnalysis() {
             <CardDescription>접속 디바이스 및 플랫폼 현황</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={clientData?.distribution || []}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ type, percentage }) => `${type}: ${percentage}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="percentage"
-                >
-                  {(clientData?.distribution || []).map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <D3RealtimePieChart
+              data={clientData?.distribution || []}
+              width={400}
+              height={300}
+              valueKey="percentage"
+              nameKey="type"
+              colors={COLORS}
+              transitionDuration={750}
+            />
 
             <div className="mt-4 space-y-2">
               {clientData?.distribution.map((client, index) => (
@@ -222,19 +197,16 @@ export function GeographicAnalysis() {
             <CardDescription>웹 접속 브라우저 현황</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={browserData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" fill="#10b981">
-                  {browserData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <D3RealtimeBarChart
+              data={browserData}
+              width={500}
+              height={200}
+              xKey="name"
+              yKey="value"
+              color={COLORS}
+              maxDataPoints={10}
+              transitionDuration={500}
+            />
           </CardContent>
         </Card>
       </div>
@@ -294,25 +266,15 @@ export function GeographicAnalysis() {
           <CardDescription>클라이언트 운영체제 현황</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={osData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, value }) => `${name}: ${value}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {osData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          <D3RealtimePieChart
+            data={osData}
+            width={400}
+            height={250}
+            valueKey="value"
+            nameKey="name"
+            colors={COLORS}
+            transitionDuration={750}
+          />
         </CardContent>
       </Card>
     </div>

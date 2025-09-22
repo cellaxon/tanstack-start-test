@@ -7,21 +7,9 @@ import {
 } from '@/components/ui/card';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { AlertTriangle, Lock, Shield, ShieldAlert, ShieldOff, UserX } from 'lucide-react';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { D3RealtimePieChart } from './d3/D3RealtimePieChart';
+import { D3RealtimeLineChart } from './d3/D3RealtimeLineChart';
+import { D3RealtimeBarChart } from './d3/D3RealtimeBarChart';
 
 const COLORS = ['#10b981', '#f59e0b', '#ef4444'];
 
@@ -39,7 +27,7 @@ export function SecurityMonitoring() {
 
   // Format authentication data
   const authData = securityData.map(item => ({
-    time: new Date(item.timestamp).toLocaleTimeString(),
+    time: item.timestamp,
     successful: item.authentication.successful,
     failed: item.authentication.failed,
     failureRate: parseFloat(item.authentication.failureRate),
@@ -65,7 +53,6 @@ export function SecurityMonitoring() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold mb-4">보안 모니터링</h2>
 
       {/* Security Overview */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -138,25 +125,15 @@ export function SecurityMonitoring() {
             <CardDescription>요청 제한 상태</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={rateLimitingData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value }) => `${name}: ${value}`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {rateLimitingData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <D3RealtimePieChart
+              data={rateLimitingData}
+              width={400}
+              height={300}
+              valueKey="value"
+              nameKey="name"
+              colors={['#10b981', '#f59e0b', '#ef4444']}
+              transitionDuration={750}
+            />
           </CardContent>
         </Card>
 
@@ -167,41 +144,16 @@ export function SecurityMonitoring() {
             <CardDescription>시간대별 인증 시도 현황</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={authData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="time" />
-                <YAxis yAxisId="left" />
-                <YAxis yAxisId="right" orientation="right" />
-                <Tooltip />
-                <Legend />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="successful"
-                  stroke="#10b981"
-                  strokeWidth={2}
-                  name="성공"
-                />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="failed"
-                  stroke="#ef4444"
-                  strokeWidth={2}
-                  name="실패"
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="failureRate"
-                  stroke="#f59e0b"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  name="실패율(%)"
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <D3RealtimeLineChart
+              data={authData}
+              width={500}
+              height={300}
+              xKey="time"
+              yKey="successful"
+              color="#10b981"
+              maxDataPoints={50}
+              transitionDuration={300}
+            />
           </CardContent>
         </Card>
 
@@ -212,19 +164,17 @@ export function SecurityMonitoring() {
             <CardDescription>보안 위협 탐지 현황</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={suspiciousData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="type" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="attempts" fill="#ef4444">
-                  {suspiciousData.map((_entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <D3RealtimeBarChart
+              data={suspiciousData}
+              width={500}
+              height={300}
+              xKey="type"
+              yKey="attempts"
+              color={COLORS}
+              maxDataPoints={10}
+              transitionDuration={500}
+              maintainYScale={true}
+            />
           </CardContent>
         </Card>
 
