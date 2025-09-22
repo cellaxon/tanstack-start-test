@@ -33,7 +33,7 @@ export function generateTokens(userId: string, username: string, email?: string)
   };
 }
 
-export function authenticateToken(req: AuthRequest, res: Response, next: NextFunction): void | Response {
+export function authenticateToken(req: AuthRequest, res: Response, next: NextFunction): undefined | Response {
   const authHeader = req.headers.authorization;
   const token = authHeader?.split(' ')[1];
 

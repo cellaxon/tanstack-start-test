@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 
 const router = express.Router();
 
@@ -33,7 +33,7 @@ function generateTimeSeriesData(hours = 24, baseValue = 300, variance = 200) {
  *             schema:
  *               $ref: '#/components/schemas/DashboardStats'
  */
-router.get('/stats', (req: any, res: any) => {
+router.get('/stats', (req: Request, res: Response) => {
   const stats = {
     totalRequests: {
       value: Math.floor(Math.random() * 500000) + 1000000,
@@ -65,7 +65,7 @@ router.get('/stats', (req: any, res: any) => {
 });
 
 // Request volume time series
-router.get('/request-volume', (req: any, res: any) => {
+router.get('/request-volume', (req: Request, res: Response) => {
   const { hours = 24 } = req.query;
   const data = generateTimeSeriesData(Number(hours), 500, 300);
 
@@ -77,7 +77,7 @@ router.get('/request-volume', (req: any, res: any) => {
 });
 
 // API methods distribution
-router.get('/methods-distribution', (req: any, res: any) => {
+router.get('/methods-distribution', (req: Request, res: Response) => {
   const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
   const distribution = methods.map(method => ({
     method,
@@ -97,7 +97,7 @@ router.get('/methods-distribution', (req: any, res: any) => {
 });
 
 // Response status distribution
-router.get('/status-distribution', (req: any, res: any) => {
+router.get('/status-distribution', (req: Request, res: Response) => {
   const statuses = [
     { status: '2xx', label: 'Success', count: Math.floor(Math.random() * 2000) + 8000 },
     { status: '3xx', label: 'Redirect', count: Math.floor(Math.random() * 500) + 100 },
@@ -117,7 +117,7 @@ router.get('/status-distribution', (req: any, res: any) => {
 });
 
 // Response time trend
-router.get('/response-time', (req: any, res: any) => {
+router.get('/response-time', (req: Request, res: Response) => {
   const { hours = 24 } = req.query;
   const data = generateTimeSeriesData(Number(hours), 150, 100);
 
@@ -132,7 +132,7 @@ router.get('/response-time', (req: any, res: any) => {
 });
 
 // Traffic by endpoint
-router.get('/top-endpoints', (req: any, res: any) => {
+router.get('/top-endpoints', (req: Request, res: Response) => {
   const endpoints = [
     '/api/users',
     '/api/products',
@@ -155,7 +155,7 @@ router.get('/top-endpoints', (req: any, res: any) => {
 });
 
 // Error logs
-router.get('/errors', (req: any, res: any) => {
+router.get('/errors', (req: Request, res: Response) => {
   const errorTypes = ['TypeError', 'ReferenceError', 'NetworkError', 'ValidationError', 'AuthenticationError'];
   const endpoints = ['/api/users', '/api/orders', '/api/products', '/api/auth'];
 
@@ -179,7 +179,7 @@ router.get('/errors', (req: any, res: any) => {
 });
 
 // Client usage statistics
-router.get('/client-usage', (req: any, res: any) => {
+router.get('/client-usage', (req: Request, res: Response) => {
   const clients = [];
   const clientNames = ['Mobile App', 'Web App', 'Admin Panel', 'Third Party API', 'Internal Service'];
 
@@ -202,7 +202,7 @@ router.get('/client-usage', (req: any, res: any) => {
 });
 
 // Rate limiting stats
-router.get('/rate-limits', (req: any, res: any) => {
+router.get('/rate-limits', (req: Request, res: Response) => {
   const limits = [];
   const tiers = ['free', 'basic', 'pro', 'enterprise'];
 
@@ -220,7 +220,7 @@ router.get('/rate-limits', (req: any, res: any) => {
 });
 
 // Billing metrics
-router.get('/billing', (req: any, res: any) => {
+router.get('/billing', (req: Request, res: Response) => {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
   const billing = months.map(month => ({
     month,
@@ -242,7 +242,7 @@ router.get('/billing', (req: any, res: any) => {
 });
 
 // Network path visualization data
-router.get('/network-path', (req: any, res: any) => {
+router.get('/network-path', (req: Request, res: Response) => {
   const nodes = [
     { id: 'client', label: 'Client App', type: 'client', x: 100, y: 200 },
     { id: 'cdn', label: 'CDN', type: 'cdn', x: 300, y: 100 },

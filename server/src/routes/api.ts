@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 import { getAllUsers } from '../db/users.js';
 import type { AuthRequest, Todo, Post, Trace, TraceSpan } from '../types/index.js';
 import { authenticateToken } from '../middleware/auth.js';
@@ -50,7 +50,7 @@ const posts: Post[] = [
  *       401:
  *         description: Unauthorized
  */
-router.get('/users', (req: any, res: any) => {
+router.get('/users', (req: Request, res: Response) => {
   const users = getAllUsers().map(u => ({
     id: u.id,
     name: u.name,
@@ -107,7 +107,7 @@ router.get('/users', (req: any, res: any) => {
  *       401:
  *         description: Unauthorized
  */
-router.get('/todos', (req: any, res: any) => {
+router.get('/todos', (req: Request, res: Response) => {
   const { page = 1, limit = 10, completed } = req.query;
   let filtered = todos;
 
@@ -129,7 +129,7 @@ router.get('/todos', (req: any, res: any) => {
   });
 });
 
-router.get('/todos/:id', (req: any, res: any) => {
+router.get('/todos/:id', (req: Request, res: Response) => {
   const todo = todos.find(t => t.id === Number.parseInt(req.params.id));
   if (!todo) {
     return res.status(404).json({ error: 'Todo not found' });
@@ -137,7 +137,7 @@ router.get('/todos/:id', (req: any, res: any) => {
   res.json(todo);
 });
 
-router.post('/todos', (req: any, res: any) => {
+router.post('/todos', (req: Request, res: Response) => {
   const { title, completed = false } = req.body;
   const newTodo = {
     id: todos.length + 1,
@@ -150,7 +150,7 @@ router.post('/todos', (req: any, res: any) => {
   res.status(201).json(newTodo);
 });
 
-router.put('/todos/:id', (req: any, res: any) => {
+router.put('/todos/:id', (req: Request, res: Response) => {
   const todoIndex = todos.findIndex(t => t.id === Number.parseInt(req.params.id));
   if (todoIndex === -1) {
     return res.status(404).json({ error: 'Todo not found' });
@@ -166,7 +166,7 @@ router.put('/todos/:id', (req: any, res: any) => {
   res.json(todos[todoIndex]);
 });
 
-router.delete('/todos/:id', (req: any, res: any) => {
+router.delete('/todos/:id', (req: Request, res: Response) => {
   const todoIndex = todos.findIndex(t => t.id === Number.parseInt(req.params.id));
   if (todoIndex === -1) {
     return res.status(404).json({ error: 'Todo not found' });
@@ -176,7 +176,7 @@ router.delete('/todos/:id', (req: any, res: any) => {
   res.status(204).send();
 });
 
-router.get('/posts', (req: any, res: any) => {
+router.get('/posts', (req: Request, res: Response) => {
   const { page = 1, limit = 10, tag } = req.query;
   let filtered = posts;
 
@@ -198,7 +198,7 @@ router.get('/posts', (req: any, res: any) => {
   });
 });
 
-router.get('/posts/:id', (req: any, res: any) => {
+router.get('/posts/:id', (req: Request, res: Response) => {
   const post = posts.find(p => p.id === Number.parseInt(req.params.id));
   if (!post) {
     return res.status(404).json({ error: 'Post not found' });
@@ -206,7 +206,7 @@ router.get('/posts/:id', (req: any, res: any) => {
   res.json(post);
 });
 
-router.post('/posts', (req: any, res: any) => {
+router.post('/posts', (req: Request, res: Response) => {
   const { title, content, tags = [] } = req.body;
   const newPost = {
     id: posts.length + 1,
@@ -221,7 +221,7 @@ router.post('/posts', (req: any, res: any) => {
 });
 
 
-router.get('/notifications', (req: any, res: any) => {
+router.get('/notifications', (req: Request, res: Response) => {
   res.json([
     {
       id: 1,
@@ -288,7 +288,7 @@ router.get('/notifications', (req: any, res: any) => {
  *       401:
  *         description: Unauthorized
  */
-router.get('/traces', (req: any, res: any) => {
+router.get('/traces', (req: Request, res: Response) => {
   const { traceId, limit = 20 } = req.query;
 
   // Generate mock trace data with more variation
@@ -327,7 +327,7 @@ router.get('/traces', (req: any, res: any) => {
       : 'GenericOperation';
 
     // Vary duration based on operation type
-    let duration;
+    let duration: number;
     if (serviceName === 'database') {
       duration = Math.floor(Math.random() * 800) + 100; // 100-900ms for DB ops
     } else if (serviceName === 'cache') {
@@ -438,7 +438,7 @@ router.get('/traces', (req: any, res: any) => {
  *       404:
  *         description: Trace not found
  */
-router.get('/traces/:traceId', (req: any, res: any) => {
+router.get('/traces/:traceId', (req: Request, res: Response) => {
   const { traceId } = req.params;
   const baseTime = Date.now() - Math.floor(Math.random() * 60000); // Random time in last minute
 
@@ -636,7 +636,7 @@ router.get('/traces/:traceId', (req: any, res: any) => {
  *       401:
  *         description: Unauthorized
  */
-router.get('/traces/:traceId/waterfall', (req: any, res: any) => {
+router.get('/traces/:traceId/waterfall', (req: Request, res: Response) => {
   const { traceId } = req.params;
   const baseTime = Date.now() - 10000;
 

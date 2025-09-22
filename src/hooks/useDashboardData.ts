@@ -42,7 +42,7 @@ export function useDashboardStats() {
 }
 
 // Request Volume
-export function useRequestVolume(hours: number = 24) {
+export function useRequestVolume(hours = 24) {
 	return useQuery({
 		queryKey: ["request-volume", hours],
 		queryFn: async () => {
@@ -51,7 +51,7 @@ export function useRequestVolume(hours: number = 24) {
 			);
 			if (!response.ok) throw new Error("Failed to fetch request volume");
 			const data = await response.json();
-			return data.data.map((item: any) => ({
+			return data.data.map((item: { timestamp: string; value: number }) => ({
 				date: new Date(item.timestamp),
 				value: item.value,
 			}));
@@ -69,7 +69,7 @@ export function useMethodsDistribution() {
 			const response = await fetch("/api/dashboard/methods-distribution");
 			if (!response.ok) throw new Error("Failed to fetch methods distribution");
 			const data = await response.json();
-			return data.data.map((item: any) => ({
+			return data.data.map((item: { method: string; count: number }) => ({
 				label: item.method,
 				value: item.count,
 			}));
@@ -87,7 +87,7 @@ export function useStatusDistribution() {
 			const response = await fetch("/api/dashboard/status-distribution");
 			if (!response.ok) throw new Error("Failed to fetch status distribution");
 			const data = await response.json();
-			return data.data.map((item: any) => ({
+			return data.data.map((item: { label: string; count: number }) => ({
 				label: item.label,
 				value: item.count,
 			}));
@@ -98,7 +98,7 @@ export function useStatusDistribution() {
 }
 
 // Response Time Trend
-export function useResponseTimeTrend(hours: number = 24) {
+export function useResponseTimeTrend(hours = 24) {
 	return useQuery({
 		queryKey: ["response-time", hours],
 		queryFn: async () => {
@@ -107,7 +107,7 @@ export function useResponseTimeTrend(hours: number = 24) {
 			);
 			if (!response.ok) throw new Error("Failed to fetch response time");
 			const data = await response.json();
-			return data.data.map((item: any) => ({
+			return data.data.map((item: { timestamp: string; value: number }) => ({
 				date: new Date(item.timestamp),
 				value: item.value,
 			}));

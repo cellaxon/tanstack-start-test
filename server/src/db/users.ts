@@ -51,7 +51,8 @@ export function findOrCreateOAuthUser(provider: string, profile: OAuthProfile): 
   const key = `${provider}:${profile.id}`;
 
   if (oauthUsers.has(key)) {
-    return oauthUsers.get(key)!;
+    const user = oauthUsers.get(key);
+    if (user) return user;
   }
 
   const newUser: User = {

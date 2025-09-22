@@ -1,8 +1,8 @@
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 
 const router = express.Router();
 
-router.post('/', async (req: any, res: any) => {
+router.post('/', async (req: Request, res: Response) => {
   const { url, options = {} } = req.body;
 
   try {
@@ -24,7 +24,7 @@ router.post('/', async (req: any, res: any) => {
   }
 });
 
-router.get('/external/:service', async (req: any, res: any) => {
+router.get('/external/:service', async (req: Request, res: Response) => {
   const { service } = req.params;
 
   const mockData = {
