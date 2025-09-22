@@ -1,5 +1,5 @@
 import * as d3 from 'd3'
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 interface DataPoint {
   date: Date
@@ -114,7 +114,7 @@ export function LineChart({
     const bisect = d3.bisector<DataPoint, Date>(d => d.date).left
 
     // Create overlay for mouse events
-    const overlay = g.append('rect')
+    g.append('rect')
       .attr('width', innerWidth)
       .attr('height', innerHeight)
       .attr('fill', 'none')
@@ -152,12 +152,12 @@ export function LineChart({
 
         // Clear and add new text
         tooltipText.selectAll('*').remove()
-        const textLines = tooltipText.selectAll('tspan')
+        tooltipText.selectAll('tspan')
           .data(tooltipContent)
           .enter()
           .append('tspan')
           .attr('x', 0)
-          .attr('dy', (d, i) => i === 0 ? 0 : '1.2em')
+          .attr('dy', (_d, i) => i === 0 ? 0 : '1.2em')
           .text(d => d)
 
         // Calculate tooltip dimensions

@@ -1,5 +1,5 @@
 import * as d3 from 'd3'
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 interface PieDataPoint {
   label: string
@@ -93,7 +93,7 @@ export function PieChart({
       .style("font-weight", "bold")
       .text(d => {
         const percent = ((d.endAngle - d.startAngle) / (2 * Math.PI) * 100).toFixed(0)
-        return percent > 5 ? `${percent}%` : ''
+        return Number(percent) > 5 ? `${percent}%` : ''
       })
 
     const legend = svg.append("g")
@@ -103,7 +103,7 @@ export function PieChart({
       .data(data)
       .enter().append("g")
       .attr("class", "legend")
-      .attr("transform", (d, i) => `translate(0, ${i * 20})`)
+      .attr("transform", (_d, i) => `translate(0, ${i * 20})`)
 
     legendItem.append("rect")
       .attr("width", 15)

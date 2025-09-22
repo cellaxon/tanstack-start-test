@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import * as d3 from 'd3'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -55,7 +55,7 @@ export function TraceTimeline({
   height = 600
 }: TraceTimelineProps) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const tooltipRef = useRef<HTMLDivElement>(null);
+  // const tooltipRef = useRef<HTMLDivElement>(null);
   const [selectedSpan, setSelectedSpan] = useState<SpanData | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [currentViewMode, setCurrentViewMode] = useState(viewMode);
@@ -182,7 +182,7 @@ export function TraceTimeline({
       .attr('stroke-width', 1)
       .attr('rx', 2)
       .style('cursor', 'pointer')
-      .on('mouseover', function(event, d) {
+      .on('mouseover', function(event, d: any) {
         d3.select(this).attr('opacity', 1);
 
         tooltip.transition()
@@ -240,7 +240,7 @@ export function TraceTimeline({
         return parentIndex >= 0 ? (yScale(parentIndex.toString()) || 0) + yScale.bandwidth() / 2 : 0;
       })
       .attr('x2', d => xScale(d.startTime - startTime))
-      .attr('y2', (d, i) => {
+      .attr('y2', (d, _i) => {
         const spanIndex = spans.findIndex(s => s.spanId === d.spanId);
         return (yScale(spanIndex.toString()) || 0) + yScale.bandwidth() / 2;
       })
@@ -333,7 +333,7 @@ export function TraceTimeline({
       .attr('stroke-width', 1)
       .attr('rx', 2)
       .style('cursor', 'pointer')
-      .on('mouseover', function(event, d) {
+      .on('mouseover', function(event, d: any) {
         d3.select(this).attr('opacity', 1);
 
         tooltip.transition()
@@ -385,7 +385,7 @@ export function TraceTimeline({
   };
 
   const renderFlameGraph = (g: d3.Selection<SVGGElement, unknown, null, undefined>, traceData: TraceData, dim: typeof dimensions) => {
-    const { spans, startTime } = traceData;
+    const { spans } = traceData;
 
     // Build hierarchy for flame graph
     const root: any = {
@@ -453,16 +453,16 @@ export function TraceTimeline({
       .attr('y', d => d.y0)
       .attr('width', d => d.x1 - d.x0)
       .attr('height', d => d.y1 - d.y0)
-      .attr('fill', d => {
+      .attr('fill', (d: any) => {
         if (d.data?.data?.serviceName) {
-          return SERVICE_COLORS[d.data.data.serviceName] || color(d.data.name);
+          return SERVICE_COLORS[d.data.data.serviceName] || color(d.data?.name || '');
         }
-        return color(d.data.name);
+        return color(d.data?.name || '');
       })
       .attr('stroke', '#fff')
       .attr('stroke-width', 1)
       .style('cursor', 'pointer')
-      .on('mouseover', function(event, d) {
+      .on('mouseover', function(event, d: any) {
         d3.select(this).attr('opacity', 0.8);
 
         tooltip.transition()
@@ -496,7 +496,7 @@ export function TraceTimeline({
           .duration(500)
           .style('opacity', 0);
       })
-      .on('click', (_, d) => {
+      .on('click', (_: any, d: any) => {
         if (d.data?.data) {
           setSelectedSpan(d.data.data);
         }
@@ -511,10 +511,10 @@ export function TraceTimeline({
       .style('font-size', '10px')
       .style('fill', 'white')
       .style('pointer-events', 'none')
-      .text(d => {
+      .text((d: any) => {
         const width = d.x1 - d.x0;
         if (width > 50) {
-          const name = d.data?.data?.operationName || d.data.name;
+          const name = d.data?.data?.operationName || d.data?.name || '';
           return name.length > 20 ? name.substring(0, 20) + '...' : name;
         }
         return '';
@@ -587,7 +587,7 @@ export function TraceTimeline({
             </CardDescription>
           </div>
           <div className="flex gap-2">
-            <Select value={currentViewMode} onValueChange={setCurrentViewMode}>
+            <Select value={currentViewMode} onValueChange={(value) => setCurrentViewMode(value as 'gantt' | 'waterfall' | 'flame')}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue />
               </SelectTrigger>

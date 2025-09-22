@@ -2,23 +2,23 @@ import { defineConfig } from 'vite'
 import viteReact from '@vitejs/plugin-react'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
 import tailwindcss from '@tailwindcss/vite'
-import { resolve } from 'path'
+import { resolve } from 'node:path'
 
 // Routes to pre-render
-const routes = [
-  '/',
-  '/login',
-  '/dashboard',
-  '/dashboard/billing',
-  '/dashboard/clients',
-  '/dashboard/errors',
-  '/dashboard/performance',
-  '/dashboard/rate-limiting',
-  '/dashboard/security',
-  '/dashboard/settings',
-  '/dashboard/traffic',
-  '/dashboard/usage'
-]
+// const routes = [
+//   '/',
+//   '/login',
+//   '/dashboard',
+//   '/dashboard/billing',
+//   '/dashboard/clients',
+//   '/dashboard/errors',
+//   '/dashboard/performance',
+//   '/dashboard/rate-limiting',
+//   '/dashboard/security',
+//   '/dashboard/settings',
+//   '/dashboard/traffic',
+//   '/dashboard/usage'
+// ]
 
 export default defineConfig({
   plugins: [
@@ -29,7 +29,7 @@ export default defineConfig({
     viteReact(),
     {
       name: 'ssg-html-generator',
-      writeBundle(options, bundle) {
+      writeBundle(_options, _bundle) {
         // This will be handled by the pre-render script
       }
     }
@@ -41,7 +41,7 @@ export default defineConfig({
     minify: 'esbuild',
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
+        main: resolve(process.cwd(), 'index.html'),
       },
       output: {
         manualChunks: (id) => {

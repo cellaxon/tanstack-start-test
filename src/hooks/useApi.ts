@@ -98,7 +98,7 @@ export function useResourceCRUD<T>(resourceName: string) {
       usePaginatedQuery<T>(resourceName, baseEndpoint, params),
 
     useGet: (id: string | number) =>
-      useApiQuery<T>([resourceName, id], `${baseEndpoint}/${id}`),
+      useApiQuery<T>([resourceName, String(id)], `${baseEndpoint}/${id}`),
 
     useCreate: (options?: UseMutationOptions<T, Error, Partial<T>>) =>
       useApiMutation<T, Partial<T>>(baseEndpoint, 'POST', options),

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -15,7 +15,6 @@ import ReactFlow, {
   NodeProps,
   getBezierPath,
   EdgeProps,
-  useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,7 +34,10 @@ interface NetworkNode extends Node {
   };
 }
 
-interface NetworkEdge extends Edge {
+interface NetworkEdge {
+  id: string;
+  source: string;
+  target: string;
   label?: string;
   animated?: boolean;
   data?: {
@@ -72,7 +74,7 @@ const nodeColors: Record<string, string> = {
   queue: '#a855f7',
 };
 
-const CustomNode: React.FC<NodeProps> = ({ data, id }) => {
+const CustomNode: React.FC<NodeProps> = ({ data }) => {
   const nodeData = data as NetworkNode['data'];
   const color = nodeColors[nodeData.type] || '#94a3b8';
   const isHealthy = nodeData.status?.healthy !== false;
@@ -137,7 +139,7 @@ const CustomEdge: React.FC<EdgeProps> = ({
   animated,
   data,
 }) => {
-  const [edgePath, labelX, labelY] = getBezierPath({
+  const [edgePath] = getBezierPath({
     sourceX,
     sourceY,
     sourcePosition,
@@ -291,7 +293,7 @@ export function NetworkPath() {
 
     // Initialize maps
     nodes.forEach(node => {
-      nodeMap.set(node.id, node);
+      nodeMap.set(node.id, node as NetworkNode);
       inDegree.set(node.id, 0);
       outEdges.set(node.id, []);
     });
@@ -497,13 +499,13 @@ export function NetworkPath() {
                 maskColor="rgb(50, 50, 50, 0.8)"
               />
               <Controls />
-              <Background variant="dots" gap={12} size={1} />
+              <Background gap={12} size={1} />
             </ReactFlow>
           </div>
         </CardContent>
       </Card>
 
-      <style jsx global>{`
+      <style jsx={true} global={true}>{`
         @keyframes dashdraw {
           0% {
             stroke-dashoffset: 10;

@@ -317,7 +317,7 @@ function TracesPage() {
       )}
 
       {/* Query States Indicator (for development) */}
-      {process.env.NODE_ENV === 'development' && (
+      {import.meta.env.DEV && (
         <div className="fixed bottom-4 right-4 bg-background border rounded-lg p-2 text-xs space-y-1 opacity-50 hover:opacity-100 transition-opacity">
           <div>Traces: {tracesQuery.status}</div>
           <div>Details: {traceDetailsQuery.status}</div>

@@ -1,5 +1,5 @@
 import * as d3 from 'd3'
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 interface BarDataPoint {
   label: string
@@ -111,19 +111,19 @@ export function BarChart({
       .attr('font-size', '12px')
 
     // Create overlay for mouse events
-    const overlay = g.append('rect')
+    g.append('rect')
       .attr('width', innerWidth)
       .attr('height', innerHeight)
       .attr('fill', 'none')
       .attr('pointer-events', 'all')
-      .on('mousemove', function(event) {
+      .on('mousemove', (event) => {
         const [mouseX, mouseY] = d3.pointer(event)
 
         // Find which bar we're hovering over
-        let hoveredBar = null
-        let hoveredData = null
+        let hoveredBar: BarDataPoint | null = null
+        let hoveredData: { x: number; y: number; label: string; value: number } | null = null
 
-        data.forEach((d) => {
+        for (const d of data) {
           const x = xScale(d.label) as number
           const width = xScale.bandwidth()
           if (mouseX >= x && mouseX <= x + width) {
@@ -135,7 +135,7 @@ export function BarChart({
               value: d.value
             }
           }
-        })
+        }
 
         if (!hoveredData) {
           crosshairGroup.style('display', 'none')
@@ -143,28 +143,31 @@ export function BarChart({
           return
         }
 
+        // Type guard to ensure hoveredData is not null
+        const currentHoveredData = hoveredData as { x: number; y: number; label: string; value: number };
+
         // Update crosshair position
-        verticalLine.attr('x1', hoveredData.x).attr('x2', hoveredData.x)
+        verticalLine.attr('x1', currentHoveredData.x).attr('x2', currentHoveredData.x)
         horizontalLine.attr('y1', mouseY).attr('y2', mouseY)
 
         // Highlight the hovered bar
         g.selectAll('.bar')
-          .attr('opacity', d => d === hoveredBar ? 0.8 : 0.5)
+          .attr('opacity', d => (d as BarDataPoint) === hoveredBar ? 0.8 : 0.5)
 
         // Update tooltip content
         const tooltipContent = [
-          `항목: ${hoveredData.label}`,
-          `값: ${hoveredData.value.toLocaleString()}`
+          `항목: ${currentHoveredData.label}`,
+          `값: ${currentHoveredData.value.toLocaleString()}`
         ]
 
         // Clear and add new text
         tooltipText.selectAll('*').remove()
-        const textLines = tooltipText.selectAll('tspan')
+        tooltipText.selectAll('tspan')
           .data(tooltipContent)
           .enter()
           .append('tspan')
           .attr('x', 0)
-          .attr('dy', (d, i) => i === 0 ? 0 : '1.2em')
+          .attr('dy', (_d, i) => i === 0 ? 0 : '1.2em')
           .text(d => d)
 
         // Calculate tooltip dimensions
@@ -175,11 +178,11 @@ export function BarChart({
         const tooltipHeight = tooltipContent.length * lineHeight + padding * 2
 
         // Position tooltip
-        let tooltipX = hoveredData.x + 10
-        let tooltipY = hoveredData.y - tooltipHeight / 2
+        let tooltipX = currentHoveredData.x + 10
+        let tooltipY = currentHoveredData.y - tooltipHeight / 2
 
         if (tooltipX + tooltipWidth > innerWidth) {
-          tooltipX = hoveredData.x - tooltipWidth - 10
+          tooltipX = currentHoveredData.x - tooltipWidth - 10
         }
 
         if (tooltipY < 0) {
@@ -202,7 +205,7 @@ export function BarChart({
         crosshairGroup.style('display', 'block')
         tooltip.style('display', 'block')
       })
-      .on('mouseout', function() {
+      .on('mouseout', () => {
         // Reset bar opacity
         g.selectAll('.bar').attr('opacity', 1)
         crosshairGroup.style('display', 'none')

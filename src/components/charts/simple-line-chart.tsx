@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface SimpleLineChartProps {
   data: { label: string; value: number; value2?: number }[];
@@ -105,13 +105,13 @@ export function SimpleLineChart({
         .selectAll('g')
         .data([label, label2])
         .enter().append('g')
-        .attr('transform', (d, i) => `translate(0,${i * 20})`);
+        .attr('transform', (_d, i) => `translate(0,${i * 20})`);
 
       legend.append('rect')
         .attr('x', innerWidth - 19)
         .attr('width', 19)
         .attr('height', 3)
-        .attr('fill', (d, i) => i === 0 ? color : color2);
+        .attr('fill', (_d, i) => i === 0 ? color : color2);
 
       legend.append('text')
         .attr('x', innerWidth - 24)
@@ -166,7 +166,7 @@ export function SimpleLineChart({
       .style('display', label2 ? 'block' : 'none');
 
     // Create overlay for mouse events
-    const overlay = g.append('rect')
+    g.append('rect')
       .attr('width', innerWidth)
       .attr('height', innerHeight)
       .attr('fill', 'none')
@@ -215,14 +215,14 @@ export function SimpleLineChart({
         tooltipTextGroup.selectAll('*').remove();
 
         // Add tooltip text
-        const textElements = tooltipTextGroup.selectAll('text')
+        tooltipTextGroup.selectAll('text')
           .data(tooltipTexts)
           .enter()
           .append('text')
           .attr('fill', 'white')
           .attr('font-size', '12px')
           .attr('x', 0)
-          .attr('y', (d, i) => i * 16)
+          .attr('y', (_d, i) => i * 16)
           .text(d => d);
 
         // Calculate tooltip dimensions

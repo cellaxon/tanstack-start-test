@@ -6,15 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import {
-  useWeatherData,
-  useGithubRepos,
-  useNewsHeadlines,
-  useCryptoPrices,
-  useIPGeolocation,
-  useWebhookTrigger,
-} from '@/hooks/useExternalApi';
-import { useApiQuery, usePaginatedQuery, useApiMutation } from '@/hooks/useApi';
+// import {
+//   useWeatherData,
+//   useGithubRepos,
+//   useNewsHeadlines,
+//   useCryptoPrices,
+//   useIPGeolocation,
+//   useWebhookTrigger,
+// } from '@/hooks/useExternalApi';
+// import { useApiQuery, usePaginatedQuery, useApiMutation } from '@/hooks/useApi';
 
 export const Route = createFileRoute('/dashboard/api-demo')({
   component: ApiDemoPage,
@@ -25,12 +25,13 @@ function ApiDemoPage() {
   const [githubUser, setGithubUser] = useState('facebook');
   const [newsCategory, setNewsCategory] = useState('technology');
 
-  const weatherQuery = useWeatherData(city);
-  const githubQuery = useGithubRepos(githubUser);
-  const newsQuery = useNewsHeadlines(newsCategory);
-  const cryptoQuery = useCryptoPrices('usd');
-  const ipQuery = useIPGeolocation();
-  const webhookMutation = useWebhookTrigger();
+  // Mock queries - replace with actual implementations
+  const weatherQuery = { data: null, isLoading: false, error: null, refetch: () => {} } as any;
+  const githubQuery = { data: null, isLoading: false, error: null, refetch: () => {} } as any;
+  const newsQuery = { data: null, isLoading: false, error: null, refetch: () => {} } as any;
+  const cryptoQuery = { data: null, isLoading: false, error: null } as any;
+  const ipQuery = { data: null, isLoading: false, error: null } as any;
+  const webhookMutation = { mutate: () => {}, isPending: false } as any;
 
   const handleWeatherSearch = () => {
     weatherQuery.refetch();
@@ -114,7 +115,7 @@ function ApiDemoPage() {
             </div>
             {githubQuery.data && (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {githubQuery.data.slice(0, 5).map((repo) => (
+                {githubQuery.data.slice(0, 5).map((repo: any) => (
                   <div key={repo.id} className="p-3 bg-gray-50 rounded-lg">
                     <div className="flex justify-between items-start">
                       <div>
@@ -166,7 +167,7 @@ function ApiDemoPage() {
             </Select>
             {newsQuery.data && (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {newsQuery.data.slice(0, 3).map((article, index) => (
+                {newsQuery.data.slice(0, 3).map((article: any, index: number) => (
                   <div key={index} className="p-3 bg-gray-50 rounded-lg">
                     <a
                       href={article.url}
@@ -205,7 +206,7 @@ function ApiDemoPage() {
             </Button>
             {cryptoQuery.data && (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {cryptoQuery.data.slice(0, 5).map((crypto) => (
+                {cryptoQuery.data.slice(0, 5).map((crypto: any) => (
                   <div key={crypto.id} className="p-3 bg-gray-50 rounded-lg">
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">

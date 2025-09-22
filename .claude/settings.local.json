@@ -20,7 +20,11 @@
       "Bash(npx tsc:*)",
       "Bash(find:*)",
       "Bash(npm install:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(del \"D:\\project\\tanstack-start-test\\src\\components\\Header.tsx\")",
+      "Bash(dir:*)",
+      "Bash(pnpm test:*)"
     ],
     "deny": [],
     "ask": []
