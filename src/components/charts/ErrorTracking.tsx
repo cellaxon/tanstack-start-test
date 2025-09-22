@@ -122,6 +122,7 @@ export function ErrorTracking() {
               xKey="time"
               yKeys={['errorRate']}
               colors={['#ef4444']}
+              showDots={true}
               maxDataPoints={50}
               transitionDuration={300}
             />
@@ -134,18 +135,20 @@ export function ErrorTracking() {
             <CardTitle>HTTP 상태 코드 분포</CardTitle>
             <CardDescription>응답 코드별 분포</CardDescription>
           </CardHeader>
-          <CardContent className="flex items-center justify-center">
+          <CardContent>
             <D3RealtimePieChart
               data={statusCodeData}
-              width={350}
+              width={9999}
               height={300}
               valueKey="value"
               nameKey="name"
               colors={Object.values(STATUS_COLORS)}
-              innerRadius={60}
+              innerRadius={30}
               transitionDuration={750}
-              showLegend={false}
-              labelStyle="outside"
+              showLegend={true}
+              showLabels={true}
+              labelStyle="inside"
+              labelThreshold={10}
             />
           </CardContent>
         </Card>

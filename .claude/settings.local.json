@@ -45,7 +45,8 @@
       "Bash(for:*)",
       "Bash(do echo \"Linting: $file\")",
       "Bash(done)",
-      "Bash(pnpm rebuild:*)"
+      "Bash(pnpm rebuild:*)",
+      "Bash(npx @biomejs/biome check:*)"
     ],
     "deny": [],
     "ask": []

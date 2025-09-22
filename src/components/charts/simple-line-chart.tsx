@@ -8,7 +8,7 @@ interface SimpleLineChartProps {
 	color?: string;
 	color2?: string;
 	height?: number;
-	yMax?: number; // Optional max value for Y axis
+	yMax?: number;
 }
 
 export function SimpleLineChart({
@@ -21,13 +21,46 @@ export function SimpleLineChart({
 	yMax,
 }: SimpleLineChartProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
+	const tooltipRef = useRef<any>(null);
+	const chartRef = useRef<any>({});
+	const mousePositionRef = useRef<{ x: number; y: number } | null>(null);
 
+	// Initialize tooltip once
+	useEffect(() => {
+		if (!tooltipRef.current) {
+			tooltipRef.current = d3.select('body')
+				.append('div')
+				.attr('class', 'd3-simple-line-tooltip')
+				.style('position', 'absolute')
+				.style('background', 'rgba(0, 0, 0, 0.85)')
+				.style('color', 'white')
+				.style('padding', '10px 14px')
+				.style('border-radius', '6px')
+				.style('font-size', '12px')
+				.style('pointer-events', 'none')
+				.style('opacity', 0)
+				.style('z-index', '10000')
+				.style('white-space', 'nowrap')
+				.style('box-shadow', '0 4px 6px rgba(0, 0, 0, 0.3)')
+				.style('line-height', '1.5');
+		}
+
+		return () => {
+			// Clean up tooltip on unmount
+			if (tooltipRef.current) {
+				tooltipRef.current.remove();
+				tooltipRef.current = null;
+			}
+		};
+	}, []);
+
+	// Initialize and update chart
 	useEffect(() => {
 		if (!containerRef.current || !data.length) return;
 
 		const container = containerRef.current;
 		const width = container.clientWidth;
-		const margin = { top: 20, right: 30, bottom: 60, left: 50 }; // Increased bottom margin for time labels
+		const margin = { top: 20, right: 30, bottom: 60, left: 50 };
 		const innerWidth = width - margin.left - margin.right;
 		const innerHeight = height - margin.top - margin.bottom;
 
@@ -38,8 +71,7 @@ export function SimpleLineChart({
 			.select(container)
 			.append("svg")
 			.attr("width", width)
-			.attr("height", height)
-			.style("cursor", "crosshair");
+			.attr("height", height);
 
 		const g = svg
 			.append("g")
@@ -59,18 +91,31 @@ export function SimpleLineChart({
 			.domain([0, yMax ? yMax : maxValue * 1.1])
 			.range([innerHeight, 0]);
 
+		// Grid lines
+		g.append('g')
+			.attr('class', 'grid grid-y')
+			.call(d3.axisLeft(yScale)
+				.tickSize(-innerWidth)
+				.tickFormat(() => ''))
+			.style('stroke-dasharray', '3,3')
+			.style('opacity', 0.3);
+
 		// X axis
-		g.append("g")
+		const xAxis = g.append("g")
+			.attr('class', 'x-axis')
 			.attr("transform", `translate(0,${innerHeight})`)
-			.call(d3.axisBottom(xScale))
-			.selectAll("text")
+			.call(d3.axisBottom(xScale));
+
+		xAxis.selectAll("text")
 			.style("text-anchor", "end")
 			.attr("dx", "-.8em")
 			.attr("dy", ".15em")
 			.attr("transform", "rotate(-45)");
 
 		// Y axis
-		g.append("g").call(d3.axisLeft(yScale));
+		g.append("g")
+			.attr('class', 'y-axis')
+			.call(d3.axisLeft(yScale));
 
 		// Line generator
 		const line = d3
@@ -82,6 +127,7 @@ export function SimpleLineChart({
 		// Draw first line
 		g.append("path")
 			.datum(data)
+			.attr('class', 'line line-1')
 			.attr("fill", "none")
 			.attr("stroke", color)
 			.attr("stroke-width", 2)
@@ -97,6 +143,7 @@ export function SimpleLineChart({
 
 			g.append("path")
 				.datum(data.filter((d) => d.value2 !== undefined))
+				.attr('class', 'line line-2')
 				.attr("fill", "none")
 				.attr("stroke", color2)
 				.attr("stroke-width", 2)
@@ -107,6 +154,7 @@ export function SimpleLineChart({
 		if (label2) {
 			const legend = g
 				.append("g")
+				.attr('class', 'legend')
 				.attr("font-family", "sans-serif")
 				.attr("font-size", 10)
 				.attr("text-anchor", "end")
@@ -131,210 +179,248 @@ export function SimpleLineChart({
 				.text((d) => d);
 		}
 
-		// Add crosshair and tooltip
-		const crosshairGroup = g.append("g").style("display", "none");
+		// Create crosshair group
+		const crosshair = g.append('g')
+			.attr('class', 'crosshair')
+			.style('display', 'none');
 
 		// Vertical line
-		const verticalLine = crosshairGroup
-			.append("line")
-			.attr("y1", 0)
-			.attr("y2", innerHeight)
-			.attr("stroke", "#999")
-			.attr("stroke-width", 1)
-			.attr("stroke-dasharray", "3,3")
-			.style("pointer-events", "none");
+		crosshair.append('line')
+			.attr('class', 'crosshair-x')
+			.attr('y1', 0)
+			.attr('y2', innerHeight)
+			.style('stroke', '#999')
+			.style('stroke-width', 1)
+			.style('stroke-dasharray', '3,3')
+			.style('opacity', 0.7);
 
-		// Horizontal line for first data series
-		const horizontalLine1 = crosshairGroup
-			.append("line")
-			.attr("x1", 0)
-			.attr("x2", innerWidth)
-			.attr("stroke", color)
-			.attr("stroke-width", 1)
-			.attr("stroke-dasharray", "3,3")
-			.attr("opacity", 0.5)
-			.style("pointer-events", "none");
+		// Horizontal line for first series
+		crosshair.append('line')
+			.attr('class', 'crosshair-y1')
+			.attr('x1', 0)
+			.attr('x2', innerWidth)
+			.style('stroke', color)
+			.style('stroke-width', 1)
+			.style('stroke-dasharray', '3,3')
+			.style('opacity', 0.7);
 
-		// Horizontal line for second data series (if exists)
-		const horizontalLine2 = crosshairGroup
-			.append("line")
-			.attr("x1", 0)
-			.attr("x2", innerWidth)
-			.attr("stroke", color2)
-			.attr("stroke-width", 1)
-			.attr("stroke-dasharray", "3,3")
-			.attr("opacity", 0.5)
-			.style("pointer-events", "none")
-			.style("display", "none");
+		// Horizontal line for second series (if exists)
+		if (label2) {
+			crosshair.append('line')
+				.attr('class', 'crosshair-y2')
+				.attr('x1', 0)
+				.attr('x2', innerWidth)
+				.style('stroke', color2)
+				.style('stroke-width', 1)
+				.style('stroke-dasharray', '3,3')
+				.style('opacity', 0.7);
+		}
 
-		// Tooltip background
-		const tooltipBg = crosshairGroup
-			.append("rect")
-			.attr("fill", "rgba(0, 0, 0, 0.8)")
-			.attr("rx", 4)
-			.attr("ry", 4);
+		// Focus circles
+		const focusCircle1 = g.append('circle')
+			.attr('class', 'focus-circle-1')
+			.attr('r', 4)
+			.attr('fill', color)
+			.attr('stroke', 'white')
+			.attr('stroke-width', 2)
+			.style('display', 'none');
 
-		// Tooltip text group
-		const tooltipTextGroup = crosshairGroup.append("g");
+		const focusCircle2 = g.append('circle')
+			.attr('class', 'focus-circle-2')
+			.attr('r', 4)
+			.attr('fill', color2)
+			.attr('stroke', 'white')
+			.attr('stroke-width', 2)
+			.style('display', 'none');
 
-		// Focus circles to highlight current points
-		const focusCircle1 = crosshairGroup
-			.append("circle")
-			.attr("r", 4)
-			.attr("fill", color)
-			.attr("stroke", "white")
-			.attr("stroke-width", 2);
+		// Store chart references
+		chartRef.current = {
+			g,
+			xScale,
+			yScale,
+			crosshair,
+			focusCircle1,
+			focusCircle2,
+			innerWidth,
+			innerHeight
+		};
 
-		const focusCircle2 = crosshairGroup
-			.append("circle")
-			.attr("r", 4)
-			.attr("fill", color2)
-			.attr("stroke", "white")
-			.attr("stroke-width", 2)
-			.style("display", label2 ? "block" : "none");
+		// Mouse tracking rectangle
+		const mouseOverlay = g.append('rect')
+			.attr('class', 'mouse-overlay')
+			.attr('width', innerWidth)
+			.attr('height', innerHeight)
+			.style('fill', 'none')
+			.style('pointer-events', 'all');
 
-		// Create overlay for mouse events
-		const overlay = g.append("rect")
-			.attr("width", innerWidth)
-			.attr("height", innerHeight)
-			.attr("fill", "none")
-			.attr("pointer-events", "all");
+		// Mouse event handlers function
+		const updateMouseHandlers = () => {
+			mouseOverlay
+				.on('mousemove', function(event) {
+					if (!data || data.length === 0) return;
 
-		overlay
-			.on("mouseenter", () => {
-				crosshairGroup.style("display", "block");
-			})
-			.on("mousemove", (event) => {
-				const [mouseX, mouseY] = d3.pointer(event);
+					const [mouseX, mouseY] = d3.pointer(event);
+
+					// Store mouse position
+					mousePositionRef.current = { x: mouseX, y: mouseY };
+
+					// Find closest data point
+					const xPositions = data.map((d) => xScale(d.label) || 0);
+					let closestIndex = 0;
+					let minDistance = Math.abs(xPositions[0] - mouseX);
+
+					for (let i = 1; i < xPositions.length; i++) {
+						const distance = Math.abs(xPositions[i] - mouseX);
+						if (distance < minDistance) {
+							minDistance = distance;
+							closestIndex = i;
+						}
+					}
+
+					const d = data[closestIndex];
+					if (!d) return;
+
+					const xPos = xScale(d.label) || 0;
+					const yPos1 = yScale(d.value);
+					const yPos2 = d.value2 !== undefined ? yScale(d.value2) : null;
+
+					// Update crosshair
+					crosshair.style('display', null);
+					crosshair.select('.crosshair-x')
+						.attr('x1', xPos)
+						.attr('x2', xPos);
+
+					crosshair.select('.crosshair-y1')
+						.attr('y1', yPos1)
+						.attr('y2', yPos1);
+
+					if (yPos2 !== null && label2) {
+						crosshair.select('.crosshair-y2')
+							.attr('y1', yPos2)
+							.attr('y2', yPos2);
+					}
+
+					// Update focus circles
+					focusCircle1
+						.style('display', null)
+						.attr('cx', xPos)
+						.attr('cy', yPos1);
+
+					if (yPos2 !== null && label2) {
+						focusCircle2
+							.style('display', null)
+							.attr('cx', xPos)
+							.attr('cy', yPos2);
+					} else {
+						focusCircle2.style('display', 'none');
+					}
+
+					// Update tooltip
+					if (tooltipRef.current) {
+						tooltipRef.current.transition().duration(100).style('opacity', 0.95);
+
+						let tooltipHtml = `<div style="font-weight: bold; margin-bottom: 5px;">${d.label}</div>`;
+						tooltipHtml += `<div style="color: ${color}">● ${label}: ${d.value.toFixed(2)}</div>`;
+						if (label2 && d.value2 !== undefined) {
+							tooltipHtml += `<div style="color: ${color2}">● ${label2}: ${d.value2.toFixed(2)}</div>`;
+						}
+
+						tooltipRef.current
+							.html(tooltipHtml)
+							.style('left', `${(event as any).pageX + 15}px`)
+							.style('top', `${(event as any).pageY - 35}px`);
+					}
+				})
+				.on('mouseout', function() {
+					// Clear mouse position
+					mousePositionRef.current = null;
+
+					// Hide crosshair and focus circles
+					crosshair.style('display', 'none');
+					focusCircle1.style('display', 'none');
+					focusCircle2.style('display', 'none');
+
+					// Hide tooltip
+					if (tooltipRef.current) {
+						tooltipRef.current.transition().duration(200).style('opacity', 0);
+					}
+				});
+		};
+
+		// Set up initial mouse handlers
+		updateMouseHandlers();
+
+		// Auto-update crosshair and tooltip if mouse is over the chart
+		const checkAndUpdatePosition = () => {
+			if (mousePositionRef.current && chartRef.current.g) {
+				const { x: mouseX } = mousePositionRef.current;
 
 				// Find closest data point
 				const xPositions = data.map((d) => xScale(d.label) || 0);
-				const closestIndex = xPositions.reduce((prev, curr, index) => {
-					return Math.abs(curr - mouseX) < Math.abs(xPositions[prev] - mouseX)
-						? index
-						: prev;
-				}, 0);
+				let closestIndex = 0;
+				let minDistance = Math.abs(xPositions[0] - mouseX);
 
-				const closestData = data[closestIndex];
-				const xPos = xScale(closestData.label) || 0;
-				const yPos1 = yScale(closestData.value);
-				const yPos2 =
-					closestData.value2 !== undefined ? yScale(closestData.value2) : 0;
-
-				// Update crosshair position - snap to data point
-				verticalLine.attr("x1", xPos).attr("x2", xPos);
-
-				// Update horizontal lines based on proximity to mouse
-				if (label2 && closestData.value2 !== undefined) {
-					// Two lines exist - show the one closer to mouse cursor
-					const dist1 = Math.abs(yPos1 - mouseY);
-					const dist2 = Math.abs(yPos2 - mouseY);
-
-					if (dist1 < dist2) {
-						// First line is closer
-						horizontalLine1
-							.attr("y1", yPos1)
-							.attr("y2", yPos1)
-							.style("display", "block");
-						horizontalLine2.style("display", "none");
-					} else {
-						// Second line is closer
-						horizontalLine2
-							.attr("y1", yPos2)
-							.attr("y2", yPos2)
-							.style("display", "block");
-						horizontalLine1.style("display", "none");
+				for (let i = 1; i < xPositions.length; i++) {
+					const distance = Math.abs(xPositions[i] - mouseX);
+					if (distance < minDistance) {
+						minDistance = distance;
+						closestIndex = i;
 					}
-				} else {
-					// Only one line - show first horizontal line
-					horizontalLine1
-						.attr("y1", yPos1)
-						.attr("y2", yPos1)
-						.style("display", "block");
-					horizontalLine2.style("display", "none");
 				}
 
-				// Update focus circles position
-				focusCircle1.attr("cx", xPos).attr("cy", yPos1);
+				const d = data[closestIndex];
+				if (d) {
+					const xPos = xScale(d.label) || 0;
+					const yPos1 = yScale(d.value);
+					const yPos2 = d.value2 !== undefined ? yScale(d.value2) : null;
 
-				if (label2 && closestData.value2 !== undefined) {
-					focusCircle2
-						.attr("cx", xPos)
-						.attr("cy", yPos2)
-						.style("display", "block");
-				} else {
-					focusCircle2.style("display", "none");
+					// Update crosshair
+					crosshair.style('display', null);
+					crosshair.select('.crosshair-x')
+						.attr('x1', xPos)
+						.attr('x2', xPos);
+
+					crosshair.select('.crosshair-y1')
+						.attr('y1', yPos1)
+						.attr('y2', yPos1);
+
+					if (yPos2 !== null && label2) {
+						crosshair.select('.crosshair-y2')
+							.attr('y1', yPos2)
+							.attr('y2', yPos2);
+					}
+
+					// Update focus circles
+					focusCircle1
+						.style('display', null)
+						.attr('cx', xPos)
+						.attr('cy', yPos1);
+
+					if (yPos2 !== null && label2) {
+						focusCircle2
+							.style('display', null)
+							.attr('cx', xPos)
+							.attr('cy', yPos2);
+					} else {
+						focusCircle2.style('display', 'none');
+					}
+
+					// Update tooltip content only (position stays with mouse)
+					if (tooltipRef.current) {
+						let tooltipHtml = `<div style="font-weight: bold; margin-bottom: 5px;">${d.label}</div>`;
+						tooltipHtml += `<div style="color: ${color}">● ${label}: ${d.value.toFixed(2)}</div>`;
+						if (label2 && d.value2 !== undefined) {
+							tooltipHtml += `<div style="color: ${color2}">● ${label2}: ${d.value2.toFixed(2)}</div>`;
+						}
+						tooltipRef.current.html(tooltipHtml);
+					}
 				}
+			}
+		};
 
-				// Prepare tooltip text
-				const tooltipTexts = [
-					closestData.label,
-					`${label}: ${closestData.value.toFixed(2)}`,
-				];
+		// Call position update after data changes
+		checkAndUpdatePosition();
 
-				if (label2 && closestData.value2 !== undefined) {
-					tooltipTexts.push(`${label2}: ${closestData.value2.toFixed(2)}`);
-				}
-
-				// Clear previous text
-				tooltipTextGroup.selectAll("*").remove();
-
-				// Add tooltip text
-				tooltipTextGroup
-					.selectAll("text")
-					.data(tooltipTexts)
-					.enter()
-					.append("text")
-					.attr("fill", "white")
-					.attr("font-size", "12px")
-					.attr("x", 0)
-					.attr("y", (_d, i) => i * 16)
-					.text((d) => d);
-
-				// Calculate tooltip dimensions
-				const padding = 8;
-				const maxTextWidth = Math.max(
-					...tooltipTexts.map((text) => text.length * 6),
-				);
-				const tooltipWidth = maxTextWidth + padding * 2;
-				const tooltipHeight = tooltipTexts.length * 16 + padding;
-
-				// Position tooltip (avoid edge overflow)
-				let tooltipX = xPos + 10;
-				let tooltipY = mouseY - tooltipHeight / 2;
-
-				if (tooltipX + tooltipWidth > innerWidth) {
-					tooltipX = xPos - tooltipWidth - 10;
-				}
-
-				if (tooltipY < 0) {
-					tooltipY = 0;
-				} else if (tooltipY + tooltipHeight > innerHeight) {
-					tooltipY = innerHeight - tooltipHeight;
-				}
-
-				// Update tooltip background
-				tooltipBg
-					.attr("x", tooltipX - padding / 2)
-					.attr("y", tooltipY - padding / 2)
-					.attr("width", tooltipWidth)
-					.attr("height", tooltipHeight);
-
-				// Update tooltip text position
-				tooltipTextGroup.attr(
-					"transform",
-					`translate(${tooltipX + padding / 2}, ${tooltipY + padding / 2 + 10})`,
-				);
-
-			})
-			.on("mouseleave", () => {
-				// Don't hide immediately - let SVG mouseleave handle it
-			});
-
-		// Add SVG-level mouse leave to handle when cursor completely leaves chart
-		svg.on("mouseleave", () => {
-			crosshairGroup.style("display", "none");
-		});
 	}, [data, color, color2, height, label, label2, yMax]);
 
 	return <div ref={containerRef} style={{ width: "100%", height }} />;

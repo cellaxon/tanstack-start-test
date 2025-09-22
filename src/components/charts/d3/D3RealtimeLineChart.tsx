@@ -43,6 +43,7 @@ export function D3RealtimeLineChart({
   const maxYValueRef = useRef<number>(0);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const tooltipRef = useRef<any>(null);
+  const mousePositionRef = useRef<{ x: number; y: number } | null>(null);
 
   // Initialize chart once
   useEffect(() => {
@@ -334,11 +335,10 @@ export function D3RealtimeLineChart({
         .attr('class', 'dot')
         .attr('r', 3)
         .attr('fill', color)
+        .attr('stroke', 'white')
+        .attr('stroke-width', 1.5)
         .attr('cx', d => xScale(new Date(d[xKey])))
         .attr('cy', d => yScale(d[yKey]))
-        .style('opacity', 0)
-        .transition()
-        .duration(200)
         .style('opacity', 1);
 
       dots
@@ -357,17 +357,90 @@ export function D3RealtimeLineChart({
     // Update mouse interactions
     const bisector = d3.bisector((d: any) => new Date(d[xKey])).left;
 
-    mouseRect
-      .on('mousemove', function(event) {
-        if (limitedData.length === 0) return;
+    const updateMouseHandlers = () => {
+      mouseRect
+        .on('mousemove', function(event) {
+          if (limitedData.length === 0) return;
 
-        const [mouseX] = d3.pointer(event);
-        const x0 = xScale.invert(mouseX);
-        const index = bisector(limitedData, x0, 1);
-        const d0 = limitedData[index - 1];
-        const d1 = limitedData[index];
+          const [mouseX, mouseY] = d3.pointer(event);
 
-        if (!d0 && !d1) return;
+          // Store mouse position
+          mousePositionRef.current = { x: mouseX, y: mouseY };
+
+          const x0 = xScale.invert(mouseX);
+          const index = bisector(limitedData, x0, 1);
+          const d0 = limitedData[index - 1];
+          const d1 = limitedData[index];
+
+          if (!d0 && !d1) return;
+          let d: any;
+          if (!d0) d = d1;
+          else if (!d1) d = d0;
+          else {
+            d = x0.getTime() - new Date(d0[xKey]).getTime() > new Date(d1[xKey]).getTime() - x0.getTime() ? d1 : d0;
+          }
+
+          if (d) {
+            const xPos = xScale(new Date(d[xKey]));
+            const yPos = yScale(d[yKey]);
+
+            // Update crosshair
+            crosshair.style('display', null);
+            crosshair.select('.crosshair-x')
+              .attr('x1', xPos)
+              .attr('x2', xPos);
+            crosshair.select('.crosshair-y')
+              .attr('y1', yPos)
+              .attr('y2', yPos);
+
+            // Update focus circle
+            focusCircle
+              .style('display', null)
+              .attr('cx', xPos)
+              .attr('cy', yPos);
+
+            // Update tooltip
+            const timeStr = new Date(d[xKey]).toLocaleTimeString('ko-KR', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit'
+            });
+
+            if (tooltipRef.current) {
+              tooltipRef.current.transition().duration(100).style('opacity', 0.95);
+              tooltipRef.current.html(`
+                <div style="font-weight: bold; margin-bottom: 5px;">${timeStr}</div>
+                <div style="color: ${color}">● ${yLabel || yKey}: ${formatValue(d[yKey])}</div>
+              `)
+                .style('left', (event.pageX + 15) + 'px')
+                .style('top', (event.pageY - 35) + 'px');
+            }
+          }
+        })
+        .on('mouseout', () => {
+          // Clear mouse position
+          mousePositionRef.current = null;
+
+          crosshair.style('display', 'none');
+          focusCircle.style('display', 'none');
+          if (tooltipRef.current) {
+            tooltipRef.current.transition().duration(200).style('opacity', 0);
+          }
+        });
+    };
+
+    // Set up mouse handlers
+    updateMouseHandlers();
+
+    // Auto-update crosshair and tooltip if mouse is over the chart
+    if (mousePositionRef.current && limitedData.length > 0) {
+      const { x: mouseX } = mousePositionRef.current;
+      const x0 = xScale.invert(mouseX);
+      const index = bisector(limitedData, x0, 1);
+      const d0 = limitedData[index - 1];
+      const d1 = limitedData[index];
+
+      if (d0 || d1) {
         let d: any;
         if (!d0) d = d1;
         else if (!d1) d = d0;
@@ -394,31 +467,21 @@ export function D3RealtimeLineChart({
             .attr('cx', xPos)
             .attr('cy', yPos);
 
-          // Update tooltip
-          const timeStr = new Date(d[xKey]).toLocaleTimeString('ko-KR', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-          });
-
+          // Update tooltip content only
           if (tooltipRef.current) {
-            tooltipRef.current.transition().duration(100).style('opacity', 0.95);
+            const timeStr = new Date(d[xKey]).toLocaleTimeString('ko-KR', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit'
+            });
             tooltipRef.current.html(`
               <div style="font-weight: bold; margin-bottom: 5px;">${timeStr}</div>
               <div style="color: ${color}">● ${yLabel || yKey}: ${formatValue(d[yKey])}</div>
-            `)
-              .style('left', (event.pageX + 15) + 'px')
-              .style('top', (event.pageY - 35) + 'px');
+            `);
           }
         }
-      })
-      .on('mouseout', () => {
-        crosshair.style('display', 'none');
-        focusCircle.style('display', 'none');
-        if (tooltipRef.current) {
-          tooltipRef.current.transition().duration(200).style('opacity', 0);
-        }
-      });
+      }
+    }
 
     previousDataRef.current = limitedData;
   }, [data, maxDataPoints, xKey, yKey, color, showGrid, showDots, transitionDuration, maintainYScale, minY, yLabel, formatValue]);

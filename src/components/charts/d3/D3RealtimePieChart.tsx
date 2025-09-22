@@ -50,8 +50,8 @@ export function D3RealtimePieChart({
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const margin = 40;
-    const legendWidth = showLegend ? 150 : 0;
+    const margin = 30;
+    const legendWidth = showLegend ? 160 : 0;
     const chartWidth = actualWidth - legendWidth;
     const radius = Math.min(chartWidth, actualHeight) / 2 - margin;
 
@@ -71,13 +71,15 @@ export function D3RealtimePieChart({
       .sort(null);
 
     // Create arc generators
+    // Ensure innerRadius is not larger than outerRadius
+    const actualInnerRadius = Math.min(innerRadius, radius * 0.5);
     const arc = d3.arc<any>()
-      .innerRadius(innerRadius)
+      .innerRadius(actualInnerRadius)
       .outerRadius(radius);
 
     const labelArc = d3.arc<any>()
-      .innerRadius(radius * 0.8)
-      .outerRadius(radius * 0.8);
+      .innerRadius((actualInnerRadius + radius) / 2)
+      .outerRadius((actualInnerRadius + radius) / 2);
 
     // Create groups for slices and labels
     const slicesGroup = g.append('g')
@@ -91,7 +93,7 @@ export function D3RealtimePieChart({
     if (showLegend) {
       legendGroup = svg.append('g')
         .attr('class', 'legend')
-        .attr('transform', `translate(${chartWidth + 20}, 20)`);
+        .attr('transform', `translate(${chartWidth + 5}, ${actualHeight / 2 - 60})`);
     }
 
     // Tooltip
@@ -110,6 +112,11 @@ export function D3RealtimePieChart({
         .style('z-index', '1000');
     }
 
+    // Create hover arc for emphasis
+    const hoverArc = d3.arc<any>()
+      .innerRadius(Math.max(0, actualInnerRadius - 3))
+      .outerRadius(radius * 1.06);
+
     // Store references
     chartRef.current = {
       svg,
@@ -119,9 +126,11 @@ export function D3RealtimePieChart({
       legendGroup,
       pie,
       arc,
+      hoverArc,
       labelArc,
       color,
       radius,
+      actualInnerRadius,
       actualWidth,
       actualHeight,
       legendWidth
@@ -147,6 +156,7 @@ export function D3RealtimePieChart({
       legendGroup,
       pie,
       arc,
+      hoverArc,
       labelArc,
       color,
       radius
@@ -165,31 +175,42 @@ export function D3RealtimePieChart({
     // Exit - remove old slices
     slices.exit().remove();
 
-    // Update - existing slices without transition
-    slices
-      .attr('fill', (d: any) => color(d.data[nameKey]) as string)
-      .attr('stroke', 'white')
-      .attr('stroke-width', 2)
-      .attr('d', arc);
-
     // Enter - add new slices
     const newSlices = slices.enter()
       .append('path')
       .attr('fill', (d: any) => color(d.data[nameKey]) as string)
       .attr('stroke', 'white')
-      .attr('stroke-width', 2)
-      .attr('d', arc);
+      .attr('stroke-width', 2);
+
+    // Update all slices (existing and new) with proper arc
+    slices.merge(newSlices)
+      .transition()
+      .duration(transitionDuration)
+      .attrTween('d', function(d: any) {
+        const self = this as any;
+        const current = self._current || d;
+        const interpolate = d3.interpolate(current, d);
+        self._current = interpolate(1);
+        return function(t) {
+          return arc(interpolate(t));
+        };
+      });
+
+    // Create hover arc for emphasis if it doesn't exist
+    if (!hoverArc) {
+      const actualInnerRadius = chartRef.current.actualInnerRadius || innerRadius;
+      chartRef.current.hoverArc = d3.arc<any>()
+        .innerRadius(Math.max(0, actualInnerRadius - 3)) // Smaller inner radius on hover
+        .outerRadius(radius * 1.06); // Larger outer radius on hover
+    }
 
     // Add hover effects with tooltip to all slices (new and existing)
     slicesGroup.selectAll('path')
       .on('mouseover', function(event, d: any) {
+        // Immediately change arc without transition
         d3.select(this)
-          .transition()
-          .duration(200)
-          .attr('transform', function(d: any) {
-            const [x, y] = arc.centroid(d);
-            return `translate(${x * 0.1},${y * 0.1})`;
-          });
+          .attr('d', chartRef.current.hoverArc || hoverArc)
+          .style('filter', 'brightness(1.1)');
 
         // Show tooltip
         if (tooltipRef.current) {
@@ -197,7 +218,7 @@ export function D3RealtimePieChart({
           const percentage = ((d.data[valueKey] / total) * 100).toFixed(1);
           const value = formatValue(d.data[valueKey]);
 
-          tooltipRef.current.transition().duration(100).style('opacity', 0.95);
+          tooltipRef.current.style('opacity', 0.95);
           tooltipRef.current.html(`
             <div style="font-weight: bold; margin-bottom: 5px;">${d.data[nameKey]}</div>
             <div style="color: ${color(d.data[nameKey])}">● 값: ${value}</div>
@@ -207,15 +228,15 @@ export function D3RealtimePieChart({
             .style('top', (event.pageY - 35) + 'px');
         }
       })
-      .on('mouseout', function() {
+      .on('mouseout', function(d: any) {
+        // Immediately restore original arc without transition
         d3.select(this)
-          .transition()
-          .duration(200)
-          .attr('transform', 'translate(0,0)');
+          .attr('d', arc)
+          .style('filter', 'none');
 
         // Hide tooltip
         if (tooltipRef.current) {
-          tooltipRef.current.transition().duration(200).style('opacity', 0);
+          tooltipRef.current.style('opacity', 0);
         }
       });
 
@@ -224,11 +245,16 @@ export function D3RealtimePieChart({
       // Compute total for percentage calculation
       const total = d3.sum(data, d => d[valueKey]);
 
+      // Recalculate labelArc with current dimensions
+      const actualInnerRadius = chartRef.current.actualInnerRadius || innerRadius;
+      labelArc.innerRadius((actualInnerRadius + radius) / 2)
+             .outerRadius((actualInnerRadius + radius) / 2);
+
       if (labelStyle === 'outside') {
         // Create outer arc for label positioning
         const outerArc = d3.arc<any>()
-          .innerRadius(radius * 1.2)
-          .outerRadius(radius * 1.2);
+          .innerRadius(radius * 1.1)
+          .outerRadius(radius * 1.1);
 
         // Filter data to show labels only for significant slices
         const labelData = pieData.filter(d => {
@@ -248,7 +274,7 @@ export function D3RealtimePieChart({
             const posB = outerArc.centroid(d);
             const posC = outerArc.centroid(d);
             const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2;
-            posC[0] = radius * 1.35 * (midangle < Math.PI ? 1 : -1);
+            posC[0] = radius * 1.15 * (midangle < Math.PI ? 1 : -1);
             return [posA, posB, posC].map(p => p.join(',')).join(' ');
           });
 
@@ -260,7 +286,7 @@ export function D3RealtimePieChart({
             const posB = outerArc.centroid(d);
             const posC = outerArc.centroid(d);
             const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2;
-            posC[0] = radius * 1.35 * (midangle < Math.PI ? 1 : -1);
+            posC[0] = radius * 1.15 * (midangle < Math.PI ? 1 : -1);
             return [posA, posB, posC].map(p => p.join(',')).join(' ');
           })
           .style('fill', 'none')
@@ -278,7 +304,7 @@ export function D3RealtimePieChart({
           .attr('transform', function(d: any) {
             const pos = outerArc.centroid(d);
             const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2;
-            pos[0] = radius * 1.4 * (midangle < Math.PI ? 1 : -1);
+            pos[0] = radius * 1.2 * (midangle < Math.PI ? 1 : -1);
             return `translate(${pos})`;
           })
           .style('text-anchor', function(d: any) {
@@ -295,7 +321,7 @@ export function D3RealtimePieChart({
           .attr('transform', function(d: any) {
             const pos = outerArc.centroid(d);
             const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2;
-            pos[0] = radius * 1.4 * (midangle < Math.PI ? 1 : -1);
+            pos[0] = radius * 1.2 * (midangle < Math.PI ? 1 : -1);
             return `translate(${pos})`;
           })
           .style('text-anchor', function(d: any) {
@@ -316,28 +342,39 @@ export function D3RealtimePieChart({
           return percentage >= labelThreshold;
         });
 
-        const labels = labelsGroup.selectAll('text')
-          .data(labelData, (d: any) => d.data[nameKey]);
+        // Remove old label groups
+        labelsGroup.selectAll('.label-group').remove();
 
-        labels.exit().remove();
+        // Create label groups for each slice
+        const labelGroups = labelsGroup.selectAll('.label-group')
+          .data(labelData, (d: any) => d.data[nameKey])
+          .enter()
+          .append('g')
+          .attr('class', 'label-group')
+          .attr('transform', (d: any) => `translate(${labelArc.centroid(d)})`);
 
-        labels
-          .attr('transform', (d: any) => `translate(${labelArc.centroid(d)})`)
-          .text((d: any) => {
-            const percentage = ((d.data[valueKey] / total) * 100).toFixed(1);
-            return `${percentage}%`;
-          });
-
-        const newLabels = labels.enter()
-          .append('text')
+        // Add name text
+        labelGroups.append('text')
           .attr('text-anchor', 'middle')
+          .attr('dy', '-0.3em')
           .style('fill', 'white')
           .style('font-size', '11px')
           .style('font-weight', 'bold')
-          .attr('transform', (d: any) => `translate(${labelArc.centroid(d)})`)
+          .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.7)')
+          .text((d: any) => d.data[nameKey]);
+
+        // Add value text
+        labelGroups.append('text')
+          .attr('text-anchor', 'middle')
+          .attr('dy', '0.7em')
+          .style('fill', 'white')
+          .style('font-size', '10px')
+          .style('font-weight', 'normal')
+          .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.7)')
           .text((d: any) => {
+            const value = formatValue(d.data[valueKey]);
             const percentage = ((d.data[valueKey] / total) * 100).toFixed(1);
-            return `${percentage}%`;
+            return `${value} (${percentage}%)`;
           });
       }
     }
@@ -364,7 +401,8 @@ export function D3RealtimePieChart({
       legendItemGroups.select('text')
         .text((d: any) => {
           const percentage = ((d[valueKey] / total) * 100).toFixed(1);
-          return `${d[nameKey]} (${percentage}%)`;
+          const value = formatValue(d[valueKey]);
+          return `${d[nameKey]}: ${value} (${percentage}%)`;
         });
 
       // Enter - add new legend items
@@ -386,11 +424,12 @@ export function D3RealtimePieChart({
       newLegendItems.append('text')
         .attr('x', 20)
         .attr('y', 12)
-        .style('font-size', '12px')
+        .style('font-size', '11px')
         .style('font-weight', 'normal')
         .text((d: any) => {
           const percentage = ((d[valueKey] / total) * 100).toFixed(1);
-          return `${d[nameKey]} (${percentage}%)`;
+          const value = formatValue(d[valueKey]);
+          return `${d[nameKey]}: ${value} (${percentage}%)`;
         });
     }
 
@@ -418,8 +457,8 @@ export function D3RealtimePieChart({
       const svg = d3.select(svgRef.current);
       svg.attr('width', actualWidth).attr('height', actualHeight);
 
-      const margin = 40;
-      const legendWidth = showLegend ? 150 : 0;
+      const margin = 30;
+      const legendWidth = showLegend ? 160 : 0;
       const chartWidth = actualWidth - legendWidth;
       const radius = Math.min(chartWidth, actualHeight) / 2 - margin;
 
@@ -429,14 +468,15 @@ export function D3RealtimePieChart({
 
         // Update legend position if it exists
         if (chartRef.current.legendGroup) {
-          chartRef.current.legendGroup.attr('transform', `translate(${chartWidth + 20}, ${actualHeight / 2 - 50})`);
+          chartRef.current.legendGroup.attr('transform', `translate(${chartWidth + 5}, ${actualHeight / 2 - 60})`);
         }
 
         // Update arcs with new radius
         if (chartRef.current.arc && chartRef.current.pie) {
+          const actualInnerRadius = Math.min(innerRadius, radius * 0.5);
           chartRef.current.arc
             .outerRadius(radius)
-            .innerRadius(innerRadius * radius);
+            .innerRadius(actualInnerRadius);
 
           chartRef.current.radius = radius;
 

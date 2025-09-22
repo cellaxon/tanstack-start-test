@@ -168,7 +168,7 @@ export function BarChart({
 				verticalLine
 					.attr("x1", currentHoveredData.x)
 					.attr("x2", currentHoveredData.x);
-				horizontalLine.attr("y1", mouseY).attr("y2", mouseY);
+				horizontalLine.attr("y1", currentHoveredData.y).attr("y2", currentHoveredData.y);
 
 				// Highlight the hovered bar
 				g.selectAll(".bar").attr("opacity", (d) =>

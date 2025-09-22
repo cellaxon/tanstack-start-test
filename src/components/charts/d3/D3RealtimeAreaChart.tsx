@@ -11,6 +11,7 @@ interface D3RealtimeAreaChartProps {
   stacked?: boolean;
   showGrid?: boolean;
   showLegend?: boolean;
+  showDots?: boolean;
   maxDataPoints?: number;
   transitionDuration?: number;
   yLabels?: { [key: string]: string };
@@ -27,6 +28,7 @@ export function D3RealtimeAreaChart({
   stacked = false,
   showGrid = true,
   showLegend = false,
+  showDots = false,
   maxDataPoints = 50,
   transitionDuration = 500,
   yLabels = {},
@@ -38,6 +40,7 @@ export function D3RealtimeAreaChart({
   const previousDataRef = useRef<any[]>([]);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const tooltipRef = useRef<any>(null);
+  const mousePositionRef = useRef<{ x: number; y: number } | null>(null);
 
   // Initialize chart once
   useEffect(() => {
@@ -154,6 +157,10 @@ export function D3RealtimeAreaChart({
         .style('z-index', '1000');
     }
 
+    // Dots container - rendered after areas so they appear on top
+    const dotsContainer = g.append('g')
+      .attr('class', 'dots-container');
+
     // Invisible rect for mouse events
     const mouseRect = g.append('rect')
       .attr('class', 'mouse-overlay')
@@ -197,6 +204,7 @@ export function D3RealtimeAreaChart({
       xAxisGroup,
       yAxisGroup,
       areasGroup,
+      dotsContainer,
       innerWidth,
       innerHeight,
       gridX: chartRef.current.gridX,
@@ -221,6 +229,7 @@ export function D3RealtimeAreaChart({
       xAxisGroup,
       yAxisGroup,
       areasGroup,
+      dotsContainer,
       innerWidth,
       innerHeight,
       gridX,
@@ -369,23 +378,153 @@ export function D3RealtimeAreaChart({
         .tickFormat(() => ''));
     }
 
+    // Update dots if enabled
+    if (showDots && dotsContainer) {
+      yKeys.forEach((key, keyIndex) => {
+        const dotsSelection = dotsContainer.selectAll(`.dot-${key}`)
+          .data(limitedData, (d: any) => d[xKey]);
+
+        // Remove old dots
+        dotsSelection.exit().remove();
+
+        // Add new dots
+        const newDots = dotsSelection.enter()
+          .append('circle')
+          .attr('class', `dot-${key}`)
+          .attr('r', 3)
+          .attr('fill', colors[keyIndex % colors.length])
+          .attr('stroke', 'white')
+          .attr('stroke-width', 1.5)
+          .style('opacity', 1);
+
+        // Update all dots position
+        dotsSelection.merge(newDots)
+          .attr('cx', (d: any) => xScale(new Date(d[xKey])))
+          .attr('cy', (d: any) => {
+            if (stacked) {
+              // For stacked charts, calculate cumulative y
+              let cumulativeY = 0;
+              for (let i = 0; i <= keyIndex; i++) {
+                cumulativeY += d[yKeys[i]] || 0;
+              }
+              return yScale(cumulativeY);
+            } else {
+              return yScale(d[key] || 0);
+            }
+          });
+      });
+    }
+
     // Update mouse interactions
     const { crosshair, focusCirclesGroup, focusCircles, mouseRect } = chartRef.current;
 
     if (mouseRect && crosshair && focusCirclesGroup) {
       const bisector = d3.bisector((d: any) => new Date(d[xKey])).left;
 
-      mouseRect
-        .on('mousemove', function(event) {
-          if (limitedData.length === 0) return;
+      const updateMouseHandlers = () => {
+        mouseRect
+          .on('mousemove', function(event) {
+            if (limitedData.length === 0) return;
 
-          const [mouseX] = d3.pointer(event);
-          const x0 = xScale.invert(mouseX);
-          const index = bisector(limitedData, x0, 1);
-          const d0 = limitedData[index - 1];
-          const d1 = limitedData[index];
+            const [mouseX, mouseY] = d3.pointer(event);
 
-          if (!d0 && !d1) return;
+            // Store mouse position
+            mousePositionRef.current = { x: mouseX, y: mouseY };
+
+            const x0 = xScale.invert(mouseX);
+            const index = bisector(limitedData, x0, 1);
+            const d0 = limitedData[index - 1];
+            const d1 = limitedData[index];
+
+            if (!d0 && !d1) return;
+            let d: any;
+            if (!d0) d = d1;
+            else if (!d1) d = d0;
+            else {
+              d = x0.getTime() - new Date(d0[xKey]).getTime() > new Date(d1[xKey]).getTime() - x0.getTime() ? d1 : d0;
+            }
+
+            if (d) {
+              const xPos = xScale(new Date(d[xKey]));
+
+              // Update crosshair
+              crosshair.style('display', null);
+              crosshair.select('.crosshair-x')
+                .attr('x1', xPos)
+                .attr('x2', xPos);
+
+              // Update focus circles for each series
+              focusCirclesGroup.style('display', null);
+
+              if (stacked) {
+                // For stacked charts, calculate cumulative y values
+                let cumulativeY = 0;
+                yKeys.forEach((key, i) => {
+                  cumulativeY += d[key];
+                  const yPos = yScale(cumulativeY);
+                  if (focusCircles[i]) {
+                    focusCircles[i]
+                      .attr('cx', xPos)
+                      .attr('cy', yPos);
+                  }
+                });
+              } else {
+                // For non-stacked charts
+                yKeys.forEach((key, i) => {
+                  const yPos = yScale(d[key]);
+                  if (focusCircles[i]) {
+                    focusCircles[i]
+                      .attr('cx', xPos)
+                      .attr('cy', yPos);
+                  }
+                });
+              }
+
+              // Update tooltip
+              const timeStr = new Date(d[xKey]).toLocaleTimeString('ko-KR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+              });
+
+              if (tooltipRef.current) {
+                let tooltipHtml = `<div style="font-weight: bold; margin-bottom: 5px;">${timeStr}</div>`;
+                yKeys.forEach((key, i) => {
+                  const label = yLabels[key] || key;
+                  tooltipHtml += `<div style="color: ${colors[i % colors.length]}">● ${label}: ${formatValue(d[key])}</div>`;
+                });
+
+                tooltipRef.current.transition().duration(100).style('opacity', 0.95);
+                tooltipRef.current.html(tooltipHtml)
+                  .style('left', (event.pageX + 15) + 'px')
+                  .style('top', (event.pageY - 35) + 'px');
+              }
+            }
+          })
+          .on('mouseout', () => {
+            // Clear mouse position
+            mousePositionRef.current = null;
+
+            crosshair.style('display', 'none');
+            focusCirclesGroup.style('display', 'none');
+            if (tooltipRef.current) {
+              tooltipRef.current.transition().duration(200).style('opacity', 0);
+            }
+          });
+      };
+
+      // Set up mouse handlers
+      updateMouseHandlers();
+
+      // Auto-update crosshair and tooltip if mouse is over the chart
+      if (mousePositionRef.current && limitedData.length > 0) {
+        const { x: mouseX } = mousePositionRef.current;
+        const x0 = xScale.invert(mouseX);
+        const index = bisector(limitedData, x0, 1);
+        const d0 = limitedData[index - 1];
+        const d1 = limitedData[index];
+
+        if (d0 || d1) {
           let d: any;
           if (!d0) d = d1;
           else if (!d1) d = d0;
@@ -429,34 +568,25 @@ export function D3RealtimeAreaChart({
               });
             }
 
-            // Update tooltip
-            const timeStr = new Date(d[xKey]).toLocaleTimeString('ko-KR', {
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit'
-            });
-
+            // Update tooltip content only
             if (tooltipRef.current) {
+              const timeStr = new Date(d[xKey]).toLocaleTimeString('ko-KR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+              });
+
               let tooltipHtml = `<div style="font-weight: bold; margin-bottom: 5px;">${timeStr}</div>`;
               yKeys.forEach((key, i) => {
                 const label = yLabels[key] || key;
                 tooltipHtml += `<div style="color: ${colors[i % colors.length]}">● ${label}: ${formatValue(d[key])}</div>`;
               });
 
-              tooltipRef.current.transition().duration(100).style('opacity', 0.95);
-              tooltipRef.current.html(tooltipHtml)
-                .style('left', (event.pageX + 15) + 'px')
-                .style('top', (event.pageY - 35) + 'px');
+              tooltipRef.current.html(tooltipHtml);
             }
           }
-        })
-        .on('mouseout', () => {
-          crosshair.style('display', 'none');
-          focusCirclesGroup.style('display', 'none');
-          if (tooltipRef.current) {
-            tooltipRef.current.transition().duration(200).style('opacity', 0);
-          }
-        });
+        }
+      }
     }
 
     // Store current data for next update

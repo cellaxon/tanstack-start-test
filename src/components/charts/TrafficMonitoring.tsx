@@ -51,8 +51,9 @@ export function TrafficMonitoring() {
               yKey="RPS"
               color="#8884d8"
               maxDataPoints={50}
-              transitionDuration={300}
+              transitionDuration={0}
               showGrid={true}
+              showDots={true}
               maintainYScale={true}
               minY={0}
             />
@@ -103,6 +104,7 @@ export function TrafficMonitoring() {
               colors={['#8884d8']}
               maxDataPoints={50}
               transitionDuration={300}
+              showDots={true}
             />
           </CardContent>
         </Card>

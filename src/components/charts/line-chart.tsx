@@ -149,7 +149,7 @@ export function LineChart({
 
 				// Update crosshair position
 				verticalLine.attr("x1", xPos).attr("x2", xPos);
-				horizontalLine.attr("y1", mouseY).attr("y2", mouseY);
+				horizontalLine.attr("y1", yPos).attr("y2", yPos);
 
 				// Update focus circle
 				focusCircle.attr("cx", xPos).attr("cy", yPos);
