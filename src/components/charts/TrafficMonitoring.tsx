@@ -115,8 +115,8 @@ export function TrafficMonitoring() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {topEndpoints.map((endpoint: any, index: number) => (
-                <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded">
+              {topEndpoints.map((endpoint: { endpoint: string; requests: number; avgResponseTime: number }) => (
+                <div key={endpoint.endpoint} className="flex items-center gap-4 p-3 bg-gray-50 rounded">
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">{endpoint.endpoint}</div>
                     <div className="text-xs text-gray-600">

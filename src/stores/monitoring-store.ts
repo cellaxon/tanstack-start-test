@@ -216,7 +216,6 @@ export const monitoringActions = {
           return { ...state, resourceData: [] };
         case 'security':
           return { ...state, securityData: [] };
-        case 'all':
         default:
           return {
             ...state,

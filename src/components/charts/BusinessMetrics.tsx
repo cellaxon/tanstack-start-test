@@ -65,7 +65,7 @@ export function BusinessMetrics() {
   };
 
   const getStatusColor = (availability: string, target: number) => {
-    const avail = parseFloat(availability);
+    const avail = Number.parseFloat(availability);
     if (avail >= target) return 'text-green-600';
     if (avail >= target - 0.5) return 'text-yellow-600';
     return 'text-red-600';
@@ -173,8 +173,8 @@ export function BusinessMetrics() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {slaData?.services?.map((service: any, index: number) => (
-                <div key={index} className="border rounded-lg p-3">
+              {slaData?.services?.map((service: { name: string; status: string; compliance: boolean; availability: string; avgResponseTime: number; targetResponseTime: number }) => (
+                <div key={service.name} className="border rounded-lg p-3">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <div className={`w-3 h-3 rounded-full bg-${service.status === 'healthy' ? 'green' : service.status === 'degraded' ? 'yellow' : 'red'}-500`} />
@@ -232,8 +232,8 @@ export function BusinessMetrics() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {apiUsageChartData.slice(0, 5).map((api, index) => (
-                <div key={index}>
+              {apiUsageChartData.slice(0, 5).map((api) => (
+                <div key={api.name}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm">{api.name}</span>
                     <span className="text-sm font-medium">
@@ -293,8 +293,8 @@ export function BusinessMetrics() {
             <div>
               <h3 className="font-medium mb-3">SLA 준수 상태</h3>
               <div className="space-y-2">
-                {slaData?.services?.slice(0, 4).map((service: any, index: number) => (
-                  <div key={index} className="flex items-center justify-between">
+                {slaData?.services?.slice(0, 4).map((service: { name: string; compliance: boolean }) => (
+                  <div key={service.name} className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">{service.name}</span>
                     <div className="flex items-center gap-2">
                       {service.compliance ? (

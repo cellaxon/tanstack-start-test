@@ -26,7 +26,7 @@ export function ErrorTracking() {
   // Format error rate over time
   const errorRateData = errorData.map(item => ({
     time: item.timestamp,
-    errorRate: parseFloat(item.errorRate),
+    errorRate: Number.parseFloat(item.errorRate),
     totalErrors: item.totalErrors,
   }));
 
@@ -57,8 +57,8 @@ export function ErrorTracking() {
                   {latestError?.errorRate || '0.00'}%
                 </p>
               </div>
-              <div className={`p-3 rounded-full ${parseFloat(latestError?.errorRate || '0') > 2 ? 'bg-red-100' : 'bg-green-100'}`}>
-                {parseFloat(latestError?.errorRate || '0') > 2 ? (
+              <div className={`p-3 rounded-full ${Number.parseFloat(latestError?.errorRate || '0') > 2 ? 'bg-red-100' : 'bg-green-100'}`}>
+                {Number.parseFloat(latestError?.errorRate || '0') > 2 ? (
                   <AlertCircle className="h-6 w-6 text-red-600" />
                 ) : (
                   <CheckCircle className="h-6 w-6 text-green-600" />
@@ -88,7 +88,7 @@ export function ErrorTracking() {
               <div>
                 <p className="text-sm font-medium text-gray-600">가용성</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {((1 - parseFloat(latestError?.errorRate || '0') / 100) * 100).toFixed(2)}%
+                  {((1 - Number.parseFloat(latestError?.errorRate || '0') / 100) * 100).toFixed(2)}%
                 </p>
               </div>
               <CheckCircle className="h-6 w-6 text-green-600" />
@@ -176,8 +176,8 @@ export function ErrorTracking() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {errorsByEndpoint.map((item: any, index: number) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded">
+              {errorsByEndpoint.map((item: { endpoint: string; type: string; errors: number }) => (
+                <div key={item.endpoint} className="flex items-center justify-between p-3 bg-red-50 rounded">
                   <div className="flex-1">
                     <div className="font-medium text-sm">{item.endpoint}</div>
                     <div className="text-xs text-gray-600">에러 타입: {item.type}</div>

@@ -36,11 +36,11 @@ describe("Header Component", () => {
 			{ text: "Address Form", href: "/demo/form/address" },
 		];
 
-		expectedLinks.forEach(({ text, href }) => {
+		for (const { text, href } of expectedLinks) {
 			const link = screen.getByRole("link", { name: text });
 			expect(link).toBeInTheDocument();
 			expect(link).toHaveAttribute("href", href);
-		});
+		}
 	});
 
 	it("applies correct CSS classes to header", () => {
@@ -65,10 +65,10 @@ describe("Header Component", () => {
 		const { container } = render(<Header />);
 		const linkContainers = container.querySelectorAll("nav > div");
 
-		linkContainers.forEach((div) => {
+		for (const div of linkContainers) {
 			expect(div).toHaveClass("px-2");
 			expect(div).toHaveClass("font-bold");
-		});
+		}
 	});
 
 	it("has correct number of navigation items", () => {

@@ -30,7 +30,7 @@ export function SecurityMonitoring() {
     time: item.timestamp,
     successful: item.authentication.successful,
     failed: item.authentication.failed,
-    failureRate: parseFloat(item.authentication.failureRate),
+    failureRate: Number.parseFloat(item.authentication.failureRate),
   }));
 
   // Format suspicious activity data
@@ -42,7 +42,7 @@ export function SecurityMonitoring() {
 
   const getThreatLevel = () => {
     if (!latestSecurity) return { level: 'Unknown', color: 'gray' };
-    const totalSuspicious = Object.values(latestSecurity.suspiciousActivity).reduce((a: any, b: any) => a + b, 0) as number;
+    const totalSuspicious = Object.values(latestSecurity.suspiciousActivity).reduce((a, b) => (a as number) + (b as number), 0) as number;
     if (totalSuspicious === 0) return { level: '안전', color: 'green' };
     if (totalSuspicious < 10) return { level: '주의', color: 'yellow' };
     if (totalSuspicious < 20) return { level: '경고', color: 'orange' };
@@ -66,7 +66,7 @@ export function SecurityMonitoring() {
               {threatLevel.level}
             </div>
             <p className="text-xs text-gray-600 mt-2">
-              총 {Object.values(latestSecurity?.suspiciousActivity || {}).reduce((a: any, b: any) => a + b, 0)} 건의 의심 활동
+              총 {Object.values(latestSecurity?.suspiciousActivity || {}).reduce((a, b) => (a as number) + (b as number), 0)} 건의 의심 활동
             </p>
           </CardContent>
         </Card>
@@ -183,8 +183,8 @@ export function SecurityMonitoring() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {latestSecurity?.blockedIPs?.map((blocked: any, index: number) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded">
+              {latestSecurity?.blockedIPs?.map((blocked: { ip: string; attempts: number; lastAttempt: Date }) => (
+                <div key={blocked.ip} className="flex items-center justify-between p-3 bg-red-50 rounded">
                   <div className="flex items-center gap-3">
                     <ShieldAlert className="h-4 w-4 text-red-600" />
                     <div>
@@ -194,7 +194,7 @@ export function SecurityMonitoring() {
                       </div>
                     </div>
                   </div>
-                  <button className="px-3 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50">
+                  <button type="button" className="px-3 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50">
                     차단 해제
                   </button>
                 </div>
