@@ -1,15 +1,17 @@
 import express from 'express';
 import { getAllUsers } from '../db/users.js';
+import type { AuthRequest, Todo, Post, Trace, TraceSpan } from '../types/index.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-let todos = [
+const todos: Todo[] = [
   { id: 1, title: 'Learn TanStack Query', completed: false, userId: '1' },
   { id: 2, title: 'Build OAuth integration', completed: true, userId: '1' },
   { id: 3, title: 'Create mock server', completed: false, userId: '2' },
 ];
 
-let posts = [
+const posts: Post[] = [
   {
     id: 1,
     title: 'Getting Started with TanStack Query',
@@ -48,7 +50,7 @@ let posts = [
  *       401:
  *         description: Unauthorized
  */
-router.get('/users', (req, res) => {
+router.get('/users', (req: any, res: any) => {
   const users = getAllUsers().map(u => ({
     id: u.id,
     name: u.name,
@@ -105,7 +107,7 @@ router.get('/users', (req, res) => {
  *       401:
  *         description: Unauthorized
  */
-router.get('/todos', (req, res) => {
+router.get('/todos', (req: any, res: any) => {
   const { page = 1, limit = 10, completed } = req.query;
   let filtered = todos;
 
@@ -114,28 +116,28 @@ router.get('/todos', (req, res) => {
   }
 
   const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + parseInt(limit);
+  const endIndex = startIndex + Number.parseInt(limit);
   const paginatedTodos = filtered.slice(startIndex, endIndex);
 
   res.json({
     data: paginatedTodos,
     total: filtered.length,
-    page: parseInt(page),
+    page: Number.parseInt(page),
     totalPages: Math.ceil(filtered.length / limit),
     hasNext: endIndex < filtered.length,
     hasPrev: page > 1,
   });
 });
 
-router.get('/todos/:id', (req, res) => {
-  const todo = todos.find(t => t.id === parseInt(req.params.id));
+router.get('/todos/:id', (req: any, res: any) => {
+  const todo = todos.find(t => t.id === Number.parseInt(req.params.id));
   if (!todo) {
     return res.status(404).json({ error: 'Todo not found' });
   }
   res.json(todo);
 });
 
-router.post('/todos', (req, res) => {
+router.post('/todos', (req: any, res: any) => {
   const { title, completed = false } = req.body;
   const newTodo = {
     id: todos.length + 1,
@@ -148,8 +150,8 @@ router.post('/todos', (req, res) => {
   res.status(201).json(newTodo);
 });
 
-router.put('/todos/:id', (req, res) => {
-  const todoIndex = todos.findIndex(t => t.id === parseInt(req.params.id));
+router.put('/todos/:id', (req: any, res: any) => {
+  const todoIndex = todos.findIndex(t => t.id === Number.parseInt(req.params.id));
   if (todoIndex === -1) {
     return res.status(404).json({ error: 'Todo not found' });
   }
@@ -164,8 +166,8 @@ router.put('/todos/:id', (req, res) => {
   res.json(todos[todoIndex]);
 });
 
-router.delete('/todos/:id', (req, res) => {
-  const todoIndex = todos.findIndex(t => t.id === parseInt(req.params.id));
+router.delete('/todos/:id', (req: any, res: any) => {
+  const todoIndex = todos.findIndex(t => t.id === Number.parseInt(req.params.id));
   if (todoIndex === -1) {
     return res.status(404).json({ error: 'Todo not found' });
   }
@@ -174,7 +176,7 @@ router.delete('/todos/:id', (req, res) => {
   res.status(204).send();
 });
 
-router.get('/posts', (req, res) => {
+router.get('/posts', (req: any, res: any) => {
   const { page = 1, limit = 10, tag } = req.query;
   let filtered = posts;
 
@@ -183,28 +185,28 @@ router.get('/posts', (req, res) => {
   }
 
   const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + parseInt(limit);
+  const endIndex = startIndex + Number.parseInt(limit);
   const paginatedPosts = filtered.slice(startIndex, endIndex);
 
   res.json({
     data: paginatedPosts,
     total: filtered.length,
-    page: parseInt(page),
+    page: Number.parseInt(page),
     totalPages: Math.ceil(filtered.length / limit),
     hasNext: endIndex < filtered.length,
     hasPrev: page > 1,
   });
 });
 
-router.get('/posts/:id', (req, res) => {
-  const post = posts.find(p => p.id === parseInt(req.params.id));
+router.get('/posts/:id', (req: any, res: any) => {
+  const post = posts.find(p => p.id === Number.parseInt(req.params.id));
   if (!post) {
     return res.status(404).json({ error: 'Post not found' });
   }
   res.json(post);
 });
 
-router.post('/posts', (req, res) => {
+router.post('/posts', (req: any, res: any) => {
   const { title, content, tags = [] } = req.body;
   const newPost = {
     id: posts.length + 1,
@@ -218,22 +220,8 @@ router.post('/posts', (req, res) => {
   res.status(201).json(newPost);
 });
 
-router.get('/dashboard/stats', (req, res) => {
-  res.json({
-    totalUsers: getAllUsers().length,
-    totalTodos: todos.length,
-    completedTodos: todos.filter(t => t.completed).length,
-    totalPosts: posts.length,
-    metrics: {
-      apiCalls: Math.floor(Math.random() * 10000),
-      responseTime: Math.floor(Math.random() * 100),
-      errorRate: (Math.random() * 5).toFixed(2),
-      uptime: '99.9%',
-    },
-  });
-});
 
-router.get('/notifications', (req, res) => {
+router.get('/notifications', (req: any, res: any) => {
   res.json([
     {
       id: 1,
@@ -300,7 +288,7 @@ router.get('/notifications', (req, res) => {
  *       401:
  *         description: Unauthorized
  */
-router.get('/traces', (req, res) => {
+router.get('/traces', (req: any, res: any) => {
   const { traceId, limit = 20 } = req.query;
 
   // Generate mock trace data with more variation
@@ -450,7 +438,7 @@ router.get('/traces', (req, res) => {
  *       404:
  *         description: Trace not found
  */
-router.get('/traces/:traceId', (req, res) => {
+router.get('/traces/:traceId', (req: any, res: any) => {
   const { traceId } = req.params;
   const baseTime = Date.now() - Math.floor(Math.random() * 60000); // Random time in last minute
 
@@ -516,7 +504,7 @@ router.get('/traces/:traceId', (req, res) => {
 
   // Generate child spans with hierarchical structure
   let currentTime = baseTime + Math.floor(Math.random() * 50) + 20;
-  let parentCandidates = ['span-1']; // Start with root as potential parent
+  const parentCandidates = ['span-1']; // Start with root as potential parent
 
   for (let i = 2; i <= spanCount; i++) {
     // Select random parent from candidates (creates realistic hierarchy)
@@ -648,7 +636,7 @@ router.get('/traces/:traceId', (req, res) => {
  *       401:
  *         description: Unauthorized
  */
-router.get('/traces/:traceId/waterfall', (req, res) => {
+router.get('/traces/:traceId/waterfall', (req: any, res: any) => {
   const { traceId } = req.params;
   const baseTime = Date.now() - 10000;
 

@@ -32,7 +32,8 @@
       "Bash(set)",
       "Bash(env)",
       "Bash(unset npm_config_verify_deps_before_run)",
-      "Bash(unset npm_config__jsr_registry)"
+      "Bash(unset npm_config__jsr_registry)",
+      "Bash(npm run typecheck:*)"
     ],
     "deny": [],
     "ask": []

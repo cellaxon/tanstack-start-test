@@ -1,6 +1,7 @@
 import sqlite3 from 'sqlite3';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import type { SystemMetrics } from '../types/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dbPath = join(__dirname, '../../data/metrics.db');
@@ -14,7 +15,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 });
 
-function initializeDatabase() {
+function initializeDatabase(): void {
   db.run(`
     CREATE TABLE IF NOT EXISTS system_metrics (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,17 +41,17 @@ function initializeDatabase() {
       console.log('System metrics table ready');
 
       // Create index for faster queries
-      db.run(`CREATE INDEX IF NOT EXISTS idx_timestamp ON system_metrics(timestamp DESC)`);
+      db.run("CREATE INDEX IF NOT EXISTS idx_timestamp ON system_metrics(timestamp DESC)");
 
       // Try to add swap columns if they don't exist (for existing databases)
-      db.run(`ALTER TABLE system_metrics ADD COLUMN swap_usage REAL`, () => {});
-      db.run(`ALTER TABLE system_metrics ADD COLUMN swap_total REAL`, () => {});
-      db.run(`ALTER TABLE system_metrics ADD COLUMN swap_free REAL`, () => {});
+      db.run("ALTER TABLE system_metrics ADD COLUMN swap_usage REAL", () => {});
+      db.run("ALTER TABLE system_metrics ADD COLUMN swap_total REAL", () => {});
+      db.run("ALTER TABLE system_metrics ADD COLUMN swap_free REAL", () => {});
     }
   });
 }
 
-export function saveMetrics(metrics) {
+export function saveMetrics(metrics: SystemMetrics): Promise<number> {
   return new Promise((resolve, reject) => {
     const sql = `
       INSERT INTO system_metrics (
@@ -75,7 +76,7 @@ export function saveMetrics(metrics) {
       metrics.network_tx || 0,
       metrics.disk_usage || 0,
       metrics.disk_total || 0
-    ], function(err) {
+    ], function(this: sqlite3.RunResult, err: Error | null) {
       if (err) {
         reject(err);
       } else {
@@ -85,10 +86,11 @@ export function saveMetrics(metrics) {
   });
 }
 
-export function getMetrics(duration) {
+export type TimeRange = '1m' | '5m' | '1h' | '1d' | '1w' | '1M' | '1y';
+
+export function getMetrics(duration: TimeRange): Promise<SystemMetrics[]> {
   return new Promise((resolve, reject) => {
     let whereClause = '';
-    const now = new Date();
 
     switch(duration) {
       case '1m':
@@ -158,18 +160,18 @@ export function getMetrics(duration) {
       if (err) {
         reject(err);
       } else {
-        resolve(rows);
+        resolve(rows as SystemMetrics[]);
       }
     });
   });
 }
 
-export function cleanOldMetrics() {
+export function cleanOldMetrics(): Promise<number> {
   return new Promise((resolve, reject) => {
     // Keep only last 1 year of data
     const sql = "DELETE FROM system_metrics WHERE datetime(timestamp) < datetime('now', '-1 year')";
 
-    db.run(sql, function(err) {
+    db.run(sql, function(this: sqlite3.RunResult, err: Error | null) {
       if (err) {
         reject(err);
       } else {
