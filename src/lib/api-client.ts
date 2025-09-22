@@ -85,7 +85,15 @@ class ApiClient {
 	}
 
 	async get<T>(endpoint: string, config?: RequestConfig): Promise<T> {
-		return this.request<T>(endpoint, { ...config, method: "GET" });
+		console.log(`API GET: ${this.baseUrl}${endpoint}`);
+		try {
+			const result = await this.request<T>(endpoint, { ...config, method: "GET" });
+			console.log(`API GET result for ${endpoint}:`, result);
+			return result;
+		} catch (error) {
+			console.error(`API GET error for ${endpoint}:`, error);
+			throw error;
+		}
 	}
 
 	async post<T>(

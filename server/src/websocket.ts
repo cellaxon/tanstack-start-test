@@ -191,6 +191,7 @@ function generateSLAMetrics() {
 
 export function generateGeographicData() {
   const regions = [
+    // Korean cities
     { region: 'Seoul', lat: 37.5665, lng: 126.9780, requests: Math.floor(Math.random() * 50000) + 10000 },
     { region: 'Busan', lat: 35.1796, lng: 129.0756, requests: Math.floor(Math.random() * 30000) + 5000 },
     { region: 'Incheon', lat: 37.4563, lng: 126.7052, requests: Math.floor(Math.random() * 20000) + 3000 },
@@ -198,6 +199,16 @@ export function generateGeographicData() {
     { region: 'Daejeon', lat: 36.3504, lng: 127.3845, requests: Math.floor(Math.random() * 10000) + 1000 },
     { region: 'Gwangju', lat: 35.1595, lng: 126.8526, requests: Math.floor(Math.random() * 8000) + 1000 },
     { region: 'Ulsan', lat: 35.5384, lng: 129.3114, requests: Math.floor(Math.random() * 7000) + 500 },
+    // International cities
+    { region: 'Tokyo', lat: 35.6762, lng: 139.6503, requests: Math.floor(Math.random() * 25000) + 5000 },
+    { region: 'Singapore', lat: 1.3521, lng: 103.8198, requests: Math.floor(Math.random() * 18000) + 3000 },
+    { region: 'New York', lat: 40.7128, lng: -74.0060, requests: Math.floor(Math.random() * 15000) + 2000 },
+    { region: 'London', lat: 51.5074, lng: -0.1278, requests: Math.floor(Math.random() * 12000) + 2000 },
+    { region: 'Sydney', lat: -33.8688, lng: 151.2093, requests: Math.floor(Math.random() * 8000) + 1000 },
+    { region: 'Frankfurt', lat: 50.1109, lng: 8.6821, requests: Math.floor(Math.random() * 10000) + 1500 },
+    { region: 'Mumbai', lat: 19.0760, lng: 72.8777, requests: Math.floor(Math.random() * 9000) + 1000 },
+    { region: 'São Paulo', lat: -23.5505, lng: -46.6333, requests: Math.floor(Math.random() * 7000) + 800 },
+    { region: 'Dubai', lat: 25.2048, lng: 55.2708, requests: Math.floor(Math.random() * 6000) + 700 },
   ];
 
   return {

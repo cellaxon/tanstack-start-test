@@ -40,7 +40,8 @@
       "Bash(chmod:*)",
       "Bash(.kill-ports.ps1 3000)",
       "Bash(./kill-ports.ps1 3000)",
-      "Bash(pnpm remove:*)"
+      "Bash(pnpm remove:*)",
+      "Bash(pnpm list:*)"
     ],
     "deny": [],
     "ask": []

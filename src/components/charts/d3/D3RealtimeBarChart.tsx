@@ -17,7 +17,7 @@ interface D3RealtimeBarChartProps {
 
 export function D3RealtimeBarChart({
   data,
-  width = 9999,
+  width = 600,
   height = 300,
   xKey = 'name',
   yKey = 'value',
@@ -102,7 +102,16 @@ export function D3RealtimeBarChart({
 
   // Update chart with new data
   const updateChart = useCallback(() => {
-    if (!chartRef.current.svg || !data || data.length === 0) return;
+    if (!chartRef.current.svg) return;
+
+    console.log('D3RealtimeBarChart data:', data);
+
+    // Handle empty data
+    if (!data || data.length === 0) {
+      console.log('D3RealtimeBarChart: No data to display');
+      chartRef.current.barsGroup?.selectAll('.bar').remove();
+      return;
+    }
 
     const {
       g,

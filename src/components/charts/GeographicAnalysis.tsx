@@ -10,6 +10,7 @@ import { Globe, Monitor, Smartphone, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { D3RealtimeBarChart } from './d3/D3RealtimeBarChart';
 import { D3RealtimePieChart } from './d3/D3RealtimePieChart';
+import { NaturalEarthMap } from './NaturalEarthMap';
 
 interface GeographicData {
   timestamp: Date;
@@ -39,20 +40,32 @@ interface ClientTypeData {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
 export function GeographicAnalysis() {
+  console.log('GeographicAnalysis component mounted');
   const [geoData, setGeoData] = useState<GeographicData | null>(null);
   const [clientData, setClientData] = useState<ClientTypeData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log('useEffect running...');
     const fetchData = async () => {
       try {
+        console.log('Fetching geographic data...');
         const [geoResponse, clientResponse] = await Promise.all([
           apiClient.get('/api/banking/geographic'),
           apiClient.get('/api/banking/client-distribution'),
         ]);
-        setGeoData(geoResponse.data);
-        setClientData(clientResponse.data);
+        console.log('Geographic response full:', geoResponse);
+        console.log('Client response full:', clientResponse);
+        console.log('Geographic data received:', geoResponse?.data);
+        console.log('Client data received:', clientResponse?.data);
+
+        // API response is the data itself, not wrapped in { data: ... }
+        setGeoData(geoResponse as any);
+        setClientData(clientResponse as any);
+        setIsLoading(false);
       } catch (error) {
         console.error('Failed to fetch geographic data:', error);
+        setIsLoading(false);
       }
     };
 
@@ -63,7 +76,9 @@ export function GeographicAnalysis() {
   }, []);
 
   // Sort regions by requests for the table
-  const sortedRegions = geoData?.regions.sort((a, b) => b.requests - a.requests) || [];
+  const sortedRegions = geoData?.regions?.sort((a, b) => b.requests - a.requests) || [];
+  console.log('sortedRegions:', sortedRegions);
+  console.log('geoData:', geoData);
 
   // Format browser data for chart
   const browserData = clientData?.userAgents.browsers
@@ -94,62 +109,80 @@ export function GeographicAnalysis() {
     return 'text-red-600';
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">데이터를 불러오는 중...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
 
       {/* Geographic Distribution */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="md:col-span-2">
+      <div className="grid gap-4">
+        <Card>
           <CardHeader>
             <CardTitle>지역별 요청 분포</CardTitle>
             <CardDescription>주요 도시별 API 요청 현황</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
-              {/* Map visualization area - showing table instead */}
+            {geoData && geoData.regions && <NaturalEarthMap data={geoData.regions} />}
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>지역별 트래픽 현황</CardTitle>
+              <CardDescription>실시간 요청 상태</CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-2">
-                <h3 className="text-sm font-medium mb-3">지역별 트래픽 현황</h3>
-                <div className="space-y-2">
-                  {sortedRegions.map((region, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                      <div className="flex items-center gap-3">
-                        <Globe className="h-4 w-4 text-blue-600" />
-                        <div>
-                          <div className="font-medium">{region.region}</div>
-                          <div className="text-xs text-gray-600">
-                            {region.requests.toLocaleString()} 요청
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className={`text-sm font-medium ${getLatencyColor(region.latency)}`}>
-                          {region.latency}ms
-                        </div>
-                        <div className={`text-xs ${getErrorRateColor(region.errorRate)}`}>
-                          에러: {region.errorRate}%
+                {sortedRegions.map((region, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                    <div className="flex items-center gap-3">
+                      <Globe className="h-4 w-4 text-blue-600" />
+                      <div>
+                        <div className="font-medium">{region.region}</div>
+                        <div className="text-xs text-gray-600">
+                          {region.requests.toLocaleString()} 요청
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                    <div className="text-right">
+                      <div className={`text-sm font-medium ${getLatencyColor(region.latency)}`}>
+                        {region.latency}ms
+                      </div>
+                      <div className={`text-xs ${getErrorRateColor(region.errorRate)}`}>
+                        에러: {region.errorRate}%
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
+            </CardContent>
+          </Card>
 
-              {/* Regional traffic chart */}
-              <div>
-                <h3 className="text-sm font-medium mb-3">지역별 요청 비율</h3>
-                <D3RealtimeBarChart
-                  data={sortedRegions}
-                  height={350}
-                  xKey="region"
-                  yKey="requests"
-                  color={COLORS}
-                  maxDataPoints={10}
-                  transitionDuration={500}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>지역별 요청 비율</CardTitle>
+              <CardDescription>D3.js 막대 차트</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <D3RealtimeBarChart
+                data={sortedRegions}
+                height={350}
+                xKey="region"
+                yKey="requests"
+                color={COLORS}
+                maxDataPoints={10}
+                transitionDuration={500}
+              />
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Client Type Distribution */}
         <Card>

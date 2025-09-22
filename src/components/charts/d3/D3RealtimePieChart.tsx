@@ -16,7 +16,7 @@ interface D3RealtimePieChartProps {
 
 export function D3RealtimePieChart({
   data,
-  width = 9999,
+  width = 400,
   height = 400,
   valueKey = 'value',
   nameKey = 'name',
@@ -108,7 +108,15 @@ export function D3RealtimePieChart({
 
   // Update chart with new data
   const updateChart = useCallback(() => {
-    if (!chartRef.current.svg || !data || data.length === 0) return;
+    if (!chartRef.current.svg) return;
+
+    // Handle empty data
+    if (!data || data.length === 0) {
+      chartRef.current.slicesGroup?.selectAll('path').remove();
+      chartRef.current.labelsGroup?.selectAll('text').remove();
+      chartRef.current.legendGroup?.selectAll('.legend-item').remove();
+      return;
+    }
 
     const {
       slicesGroup,
