@@ -38,8 +38,8 @@ export function BusinessMetrics() {
     // Fetch API usage data
     const fetchApiUsage = async () => {
       try {
-        const response = await apiClient.get('/api/banking/api-usage');
-        setApiUsageData(response.data);
+        const response = await apiClient.get<ApiUsageData>('/api/banking/api-usage');
+        setApiUsageData(response);
       } catch (error) {
         console.error('Failed to fetch API usage data:', error);
       }
